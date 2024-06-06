@@ -8,28 +8,11 @@ format: html
 library(tidyverse)
 ```
 
-This is the beginning of our project. 
-
 Outline:\
 - Data Processing Functions\
-  1. Select Specific Columns\
-  2. Convert Data into long format\
-  3. Parse/Pull year, convert year to numeric value AND get first 3chr, last 4num; mutate\
-  4. Create two new data sets\
-  5. Create new var in country tibble\
-  6. Create new var in non-country tibble\
+  
 - Combining Data Functions\
-  1. Write function that does 1&2 in Data Proc step\
-  2. Write function that receives output from 2 and does 3 with it.\
-  3. Write function for step 5\
-  4. Write function for step 6\
-  5. Write function for output of 3,5, and 6; returns two Tibbles.\
-  6. Wrap it into one function\
-  7. Call function twice for each .csv file\
-  8. Function combines output of both tibbles into one dataset\
+
 - Generic Functions\
-  1. Write function that plots mean across years by division.  \
-  2. Plot function itemized list; spec state, determine top/bottom, how many.\
-  3. Finalize Plot Function with additional asks.\
+
 - Putting it all together\
-  Exhausting list of tests against all the functions we made in the first three sections. \
