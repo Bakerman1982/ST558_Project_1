@@ -10,6 +10,7 @@ library(tidyverse)
 
 Outline:\
 - Data Processing Functions\
+Brock's-Branch
 - Combining Data Functions\
 - Generic Functions\
 - Putting it all together\
@@ -41,3 +42,11 @@ EDU01a |>
 #EDU01a #|>
 
 ```
+
+  
+- Combining Data Functions\
+
+- Generic Functions\
+
+- Putting it all together\
+
