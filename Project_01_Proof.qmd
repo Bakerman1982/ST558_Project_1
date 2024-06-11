@@ -66,6 +66,79 @@ NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
   
 ### Combining Data Functions
 
+```{r}
+# First Function. 
+# Rename function using Best Practices Methods
+MyFunct01 <- function(dataset) {
+  dataset %>%
+      select("area_name" = Area_name, STCOU, ends_with("D")) %>%
+      pivot_longer(
+        cols = ends_with("D"),
+        names_to = "Item_ID",
+        values_to = "Enrollment_Value")
+}
+#Testing the function using the existing EDU01a dataset
+#Dataset_Longer <- MyFunct01(EDU01a)
+
+
+
+
+# Second Function
+# Rename function using Best Practices Methods
+MyFunct02 <- function(Dataset_Longer) {
+  Dataset_Longer %>%
+    mutate(year = case_when(
+      substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
+      substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
+      measure = substr(Item_ID, 4, 7))
+}
+#Testing the function using the existing EDU01a dataset
+#Dataset_Mutated <- MyFunct02(Dataset_Longer)
+
+
+
+
+# Third Function
+# Rename function using Best Practices Methods
+MyFunct03 <- function(Dataset_Mutated) {
+  Dataset_Mutated %>%
+    County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
+}
+#Testing the function using the existing EDU01a dataset
+#Dataset_County <- MyFunct03(Dataset_Mutated)
+
+
+
+
+# Fourth Function
+# Rename function using Best Practices Methods
+MyFunct04 <- function(Dataset_Mutated) {
+  Dataset_Mutated %>%
+    NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
+    area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
+    area_name %in% c("NEW JERSEY","NEW YORK","PENNSYLVANIA") ~ "Midwest",
+    area_name %in% c("ILLINOIS","INDIANA","MICHIGAN","OHIO","WISCONSIN") ~ "East North Central",
+    area_name %in% c("IOWA","KANSAS","MINNESOTA","MISSOURI","NEBRASKA","NORTH DAKOTA","SOUTH DAKOTA") ~ "West North Central",
+    area_name %in% c("DELAWARE","FLORIDA","GEORGIA","MARYLAND","NORTH CAROLINA","SOUTH CAROLINA","VIRGINIA","WASHINGTON, D.C.","WEST VIRGINIA") ~ "South Atlantic",
+    area_name %in% c("ALABAMA","KENTUCKY","MISSISSIPPI","TENNESSEE") ~ "East South Central",
+    area_name %in% c("ARKANSAS","LOUISIANA","OKLAHOMA","TEXAS") ~ "West South Central",
+    area_name %in% c("ARIZONA","COLORADO","IDAHO","MONTANA","NEVADA","NEW MEXICO","UTAH","WYOMING") ~ "Mountain",
+    area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
+    TRUE ~ "ERROR"
+))
+}
+#Testing the function using the existing EDU01a dataset
+#Dataset_NonCountry <- MyFunct04(Dataset_Mutated)
+
+
+# Fifth Function
+# Rename function using Best Practices Methods
+myFunct05 <- function(){
+  
+}
+
+```
+
 ### Generic Functions
 
 ### Putting it all together

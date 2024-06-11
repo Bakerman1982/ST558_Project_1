@@ -178,6 +178,77 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="combining-data-functions" class="level3">
 <h3 class="anchored" data-anchor-id="combining-data-functions">Combining Data Functions</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First Function. </span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename function using Best Practices Methods</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>MyFunct01 <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset) {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  dataset <span class="sc">%&gt;%</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pivot_longer</span>(</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">#Testing the function using the existing EDU01a dataset</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">#Dataset_Longer &lt;- MyFunct01(EDU01a)</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Second Function</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename function using Best Practices Methods</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>MyFunct02 <span class="ot">&lt;-</span> <span class="cf">function</span>(Dataset_Longer) {</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  Dataset_Longer <span class="sc">%&gt;%</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>      <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>      <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">4</span>, <span class="dv">7</span>))</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="co">#Testing the function using the existing EDU01a dataset</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="co">#Dataset_Mutated &lt;- MyFunct02(Dataset_Longer)</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Third Function</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename function using Best Practices Methods</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>MyFunct03 <span class="ot">&lt;-</span> <span class="cf">function</span>(Dataset_Mutated) {</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>  Dataset_Mutated <span class="sc">%&gt;%</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    County.Data <span class="ot">&lt;-</span> County.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">substr</span>(area_name, <span class="fu">nchar</span>(area_name) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">nchar</span>(area_name)))</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a><span class="co">#Testing the function using the existing EDU01a dataset</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a><span class="co">#Dataset_County &lt;- MyFunct03(Dataset_Mutated)</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Fourth Function</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename function using Best Practices Methods</span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>MyFunct04 <span class="ot">&lt;-</span> <span class="cf">function</span>(Dataset_Mutated) {</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>  Dataset_Mutated <span class="sc">%&gt;%</span></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    NonCounty.Data <span class="ot">&lt;-</span> NonCounty.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">division =</span> <span class="fu">case_when</span>(</span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"CONNECTICUT"</span>,<span class="st">"MAINE"</span>,<span class="st">"MASSACHUSETTS"</span>,<span class="st">"NEW HAMPSHIRE"</span>,<span class="st">"RHODE ISLAND"</span>,<span class="st">"VERMONT"</span>) <span class="sc">~</span> <span class="st">"New England"</span>,</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"NEW JERSEY"</span>,<span class="st">"NEW YORK"</span>,<span class="st">"PENNSYLVANIA"</span>) <span class="sc">~</span> <span class="st">"Midwest"</span>,</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ILLINOIS"</span>,<span class="st">"INDIANA"</span>,<span class="st">"MICHIGAN"</span>,<span class="st">"OHIO"</span>,<span class="st">"WISCONSIN"</span>) <span class="sc">~</span> <span class="st">"East North Central"</span>,</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"IOWA"</span>,<span class="st">"KANSAS"</span>,<span class="st">"MINNESOTA"</span>,<span class="st">"MISSOURI"</span>,<span class="st">"NEBRASKA"</span>,<span class="st">"NORTH DAKOTA"</span>,<span class="st">"SOUTH DAKOTA"</span>) <span class="sc">~</span> <span class="st">"West North Central"</span>,</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"DELAWARE"</span>,<span class="st">"FLORIDA"</span>,<span class="st">"GEORGIA"</span>,<span class="st">"MARYLAND"</span>,<span class="st">"NORTH CAROLINA"</span>,<span class="st">"SOUTH CAROLINA"</span>,<span class="st">"VIRGINIA"</span>,<span class="st">"WASHINGTON, D.C."</span>,<span class="st">"WEST VIRGINIA"</span>) <span class="sc">~</span> <span class="st">"South Atlantic"</span>,</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALABAMA"</span>,<span class="st">"KENTUCKY"</span>,<span class="st">"MISSISSIPPI"</span>,<span class="st">"TENNESSEE"</span>) <span class="sc">~</span> <span class="st">"East South Central"</span>,</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARKANSAS"</span>,<span class="st">"LOUISIANA"</span>,<span class="st">"OKLAHOMA"</span>,<span class="st">"TEXAS"</span>) <span class="sc">~</span> <span class="st">"West South Central"</span>,</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARIZONA"</span>,<span class="st">"COLORADO"</span>,<span class="st">"IDAHO"</span>,<span class="st">"MONTANA"</span>,<span class="st">"NEVADA"</span>,<span class="st">"NEW MEXICO"</span>,<span class="st">"UTAH"</span>,<span class="st">"WYOMING"</span>) <span class="sc">~</span> <span class="st">"Mountain"</span>,</span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALASKA"</span>,<span class="st">"CALIFORNIA"</span>,<span class="st">"HAWAII"</span>,<span class="st">"OREGON"</span>,<span class="st">"WASHINGTON"</span>) <span class="sc">~</span> <span class="st">"Pacific"</span>,</span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"ERROR"</span></span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a><span class="co">#Testing the function using the existing EDU01a dataset</span></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a><span class="co">#Dataset_NonCountry &lt;- MyFunct04(Dataset_Mutated)</span></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a><span class="co"># Fifth Function</span></span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename function using Best Practices Methods</span></span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>myFunct05 <span class="ot">&lt;-</span> <span class="cf">function</span>(){</span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 <section id="generic-functions" class="level3">
 <h3 class="anchored" data-anchor-id="generic-functions">Generic Functions</h3>
