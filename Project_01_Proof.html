@@ -112,43 +112,54 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 - Generic Functions<br>
 - Putting it all together<br>
 </p>
-<section id="data-processing" class="level2">
-<h2 class="anchored" data-anchor-id="data-processing">Data Processing</h2>
+<section id="data-processing" class="level3">
+<h3 class="anchored" data-anchor-id="data-processing">Data Processing</h3>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Read-in the dataset.</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>EDU01a <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 1.)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 &amp; 2</span></span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#Select specific columns of interest from the dataset.</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>EDU01a <span class="ot">&lt;-</span> EDU01a <span class="sc">|&gt;</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>))</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">#Convert the section to long formatting. </span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>EDU01a <span class="sc">|&gt;</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#Convert the section to long formatting. </span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">#Parse Strings into numeric, survey, and measurement types.  </span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>My_EDU01a <span class="ot">&lt;-</span> EDU01a <span class="sc">|&gt;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">4</span>, <span class="dv">7</span>))</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>My_EDU01a</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 31,980 × 4
-   area_name     STCOU Item_ID    Enrollment_Value
-   &lt;chr&gt;         &lt;int&gt; &lt;chr&gt;                 &lt;int&gt;
- 1 UNITED STATES     0 EDU010187D         40024299
- 2 UNITED STATES     0 EDU010188D         39967624
- 3 UNITED STATES     0 EDU010189D         40317775
- 4 UNITED STATES     0 EDU010190D         40737600
- 5 UNITED STATES     0 EDU010191D         41385442
- 6 UNITED STATES     0 EDU010192D         42088151
- 7 UNITED STATES     0 EDU010193D         42724710
- 8 UNITED STATES     0 EDU010194D         43369917
- 9 UNITED STATES     0 EDU010195D         43993459
-10 UNITED STATES     0 EDU010196D         44715737
+<pre><code># A tibble: 31,980 × 6
+   area_name     STCOU Item_ID    Enrollment_Value year  measure
+   &lt;chr&gt;         &lt;int&gt; &lt;chr&gt;                 &lt;int&gt; &lt;chr&gt; &lt;chr&gt;  
+ 1 UNITED STATES     0 EDU010187D         40024299 1987  0101   
+ 2 UNITED STATES     0 EDU010188D         39967624 1988  0101   
+ 3 UNITED STATES     0 EDU010189D         40317775 1989  0101   
+ 4 UNITED STATES     0 EDU010190D         40737600 1990  0101   
+ 5 UNITED STATES     0 EDU010191D         41385442 1991  0101   
+ 6 UNITED STATES     0 EDU010192D         42088151 1992  0101   
+ 7 UNITED STATES     0 EDU010193D         42724710 1993  0101   
+ 8 UNITED STATES     0 EDU010194D         43369917 1994  0101   
+ 9 UNITED STATES     0 EDU010195D         43993459 1995  0101   
+10 UNITED STATES     0 EDU010196D         44715737 1996  0101   
 # ℹ 31,970 more rows</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Parse Strings into numeric, survey, and measurement types.  </span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#EDU01a #|&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
+<section id="combining-data-functions" class="level3">
+<h3 class="anchored" data-anchor-id="combining-data-functions">Combining Data Functions</h3>
+</section>
+<section id="generic-functions" class="level3">
+<h3 class="anchored" data-anchor-id="generic-functions">Generic Functions</h3>
+</section>
+<section id="putting-it-all-together" class="level3">
+<h3 class="anchored" data-anchor-id="putting-it-all-together">Putting it all together</h3>
 </section>
 
 </main>

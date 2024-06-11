@@ -10,43 +10,38 @@ library(tidyverse)
 
 Outline:\
 - Data Processing Functions\
-Brock's-Branch
 - Combining Data Functions\
 - Generic Functions\
 - Putting it all together\
 
-
-
-## Data Processing
+### Data Processing
 
 ```{r}
 #Read-in the dataset.
 EDU01a <- read.csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
 
 
-# 1.)
+# 1 & 2
 #Select specific columns of interest from the dataset.
-EDU01a <- EDU01a |>
-  select("area_name" = Area_name, STCOU, ends_with("D"))
-
-# 2.)
 #Convert the section to long formatting. 
-EDU01a |>
+#Parse Strings into numeric, survey, and measurement types.  
+My_EDU01a <- EDU01a |>
+  select("area_name" = Area_name, STCOU, ends_with("D")) |>
   pivot_longer(
       cols = ends_with("D"),
       names_to = "Item_ID",
-      values_to = "Enrollment_Value")
-
-# 3.)
-#Parse Strings into numeric, survey, and measurement types.  
-#EDU01a #|>
-
+      values_to = "Enrollment_Value") |>
+  mutate(year = case_when(
+      substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
+      substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
+      measure = substr(Item_ID, 4, 7))
+My_EDU01a
 ```
 
   
-- Combining Data Functions\
+### Combining Data Functions
 
-- Generic Functions\
+### Generic Functions
 
-- Putting it all together\
+### Putting it all together
 
