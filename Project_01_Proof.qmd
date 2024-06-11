@@ -21,7 +21,7 @@ Outline:\
 EDU01a <- read.csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
 
 
-# 1 & 2
+# 1, 2, 3
 #Select specific columns of interest from the dataset.
 #Convert the section to long formatting. 
 #Parse Strings into numeric, survey, and measurement types.  
@@ -36,8 +36,33 @@ My_EDU01a <- EDU01a |>
       substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
       measure = substr(Item_ID, 4, 7))
 My_EDU01a
-```
 
+
+# 4 From the parameterized version of the EDU table, here I have separated out the two tables by county and non-county. 
+County.Data <- My_EDU01a |> filter(grepl(", [A-Z][A-Z]", area_name))
+NonCounty.Data <- My_EDU01a |> filter(!grepl(", [A-Z][A-Z]", area_name))
+
+# Change Class
+class(County.Data) <- c("county", class(County.Data))
+class(NonCounty.Data) <- c("state", class(NonCounty.Data))
+
+# Create column that returns State
+County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
+
+# Create column that returns division conditionally  
+NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
+    area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
+    area_name %in% c("NEW JERSEY","NEW YORK","PENNSYLVANIA") ~ "Midwest",
+    area_name %in% c("ILLINOIS","INDIANA","MICHIGAN","OHIO","WISCONSIN") ~ "East North Central",
+    area_name %in% c("IOWA","KANSAS","MINNESOTA","MISSOURI","NEBRASKA","NORTH DAKOTA","SOUTH DAKOTA") ~ "West North Central",
+    area_name %in% c("DELAWARE","FLORIDA","GEORGIA","MARYLAND","NORTH CAROLINA","SOUTH CAROLINA","VIRGINIA","WASHINGTON, D.C.","WEST VIRGINIA") ~ "South Atlantic",
+    area_name %in% c("ALABAMA","KENTUCKY","MISSISSIPPI","TENNESSEE") ~ "East South Central",
+    area_name %in% c("ARKANSAS","LOUISIANA","OKLAHOMA","TEXAS") ~ "West South Central",
+    area_name %in% c("ARIZONA","COLORADO","IDAHO","MONTANA","NEVADA","NEW MEXICO","UTAH","WYOMING") ~ "Mountain",
+    area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
+    TRUE ~ "ERROR"
+))
+```
   
 ### Combining Data Functions
 
