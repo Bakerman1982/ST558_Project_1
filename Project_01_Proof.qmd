@@ -1,11 +1,12 @@
 ---
-title: "Data Manipulation Function by Form"
-author: "Brock Akerman, Emily Bruce"
+title: "Data Manipulation (EDIT TITLE)"
+author: "Brock Akerman"
 format: html
 ---
 
 ```{r setup, echo=T, output=F}
 library(tidyverse)
+options(readr.show_col_types = FALSE)
 ```
 
 Outline:\
@@ -14,42 +15,47 @@ Outline:\
 - Generic Functions\
 - Putting it all together\
 
+
 ### Data Processing
 
 ```{r}
 #Read-in the dataset.
-EDU01a <- read.csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
+EDU01a <- as_tibble(read.csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"))
 
-
-# 1, 2, 3
+#1
 #Select specific columns of interest from the dataset.
-#Convert the section to long formatting. 
-#Parse Strings into numeric, survey, and measurement types.  
 My_EDU01a <- EDU01a |>
-  select("area_name" = Area_name, STCOU, ends_with("D")) |>
+  select("area_name" = Area_name, STCOU, ends_with("D"))
+
+#2
+#Convert the section to long formatting. 
+My_EDU01a <- My_EDU01a |>
   pivot_longer(
-      cols = ends_with("D"),
-      names_to = "Item_ID",
-      values_to = "Enrollment_Value") |>
+        cols = ends_with("D"),
+        names_to = "Item_ID",
+        values_to = "Enrollment_Value")
+
+#3
+#Parse Strings into numeric, survey, and measurement types.  
+My_EDU01a <- My_EDU01a |>
   mutate(year = case_when(
-      substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
-      substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
-      measure = substr(Item_ID, 4, 7))
-My_EDU01a
+        substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
+        substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
+        measure = substr(Item_ID, 1, 7))
 
 
-# 4 From the parameterized version of the EDU table, here I have separated out the two tables by county and non-county. 
+# 4 From the parameterized version of the EDU table, I have separated out the two tables by county and non-county. 
 County.Data <- My_EDU01a |> filter(grepl(", [A-Z][A-Z]", area_name))
 NonCounty.Data <- My_EDU01a |> filter(!grepl(", [A-Z][A-Z]", area_name))
 
-# Change Class
+# Add a column that identifies the classification of data we are working with. 
 class(County.Data) <- c("county", class(County.Data))
 class(NonCounty.Data) <- c("state", class(NonCounty.Data))
 
-# Create column that returns State
+# 5 Create column that returns State
 County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
 
-# Create column that returns division conditionally  
+# 6 Create column that returns division conditionally  
 NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
     area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
     area_name %in% c("NEW JERSEY","NEW YORK","PENNSYLVANIA") ~ "Midwest",
@@ -67,54 +73,38 @@ NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
 ### Combining Data Functions
 
 ```{r}
-# First Function. 
-# Rename function using Best Practices Methods
-MyFunct01 <- function(dataset) {
-  dataset %>%
+# First Function performs steps 1 and 2 in earlier example. 
+MyFunct0102 <- function(dataset_select_pivot) {
+  dataset_select_pivot %>%
       select("area_name" = Area_name, STCOU, ends_with("D")) %>%
       pivot_longer(
         cols = ends_with("D"),
         names_to = "Item_ID",
         values_to = "Enrollment_Value")
 }
-#Testing the function using the existing EDU01a dataset
-#Dataset_Longer <- MyFunct01(EDU01a)
 
 
-
-
-# Second Function
-# Rename function using Best Practices Methods
-MyFunct02 <- function(Dataset_Longer) {
-  Dataset_Longer %>%
+# Second Function performs step 3 in earlier example. 
+MyFunct03 <- function(dataset_mutate) {
+  dataset_mutate %>%
     mutate(year = case_when(
       substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
       substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
-      measure = substr(Item_ID, 4, 7))
+      measure = substr(Item_ID, 1, 7))
 }
-#Testing the function using the existing EDU01a dataset
-#Dataset_Mutated <- MyFunct02(Dataset_Longer)
 
 
-
-
-# Third Function
-# Rename function using Best Practices Methods
-MyFunct03 <- function(Dataset_Mutated) {
-  Dataset_Mutated %>%
-    County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
-}
-#Testing the function using the existing EDU01a dataset
-#Dataset_County <- MyFunct03(Dataset_Mutated)
-
-
-
-
-# Fourth Function
-# Rename function using Best Practices Methods
-MyFunct04 <- function(Dataset_Mutated) {
-  Dataset_Mutated %>%
-    NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
+# Third Function that performs steps 4,5,6 in the earlier example.
+MyFunct040506 <- function(dataset_partition) {
+#4
+County.Data <- dataset_partition |> filter(grepl(", [A-Z][A-Z]", area_name))
+NonCounty.Data <- dataset_partition |> filter(!grepl(", [A-Z][A-Z]", area_name))
+class(County.Data) <- c("county", class(County.Data))
+class(NonCounty.Data) <- c("state", class(NonCounty.Data))
+#5 
+County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
+#6
+NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
     area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
     area_name %in% c("NEW JERSEY","NEW YORK","PENNSYLVANIA") ~ "Midwest",
     area_name %in% c("ILLINOIS","INDIANA","MICHIGAN","OHIO","WISCONSIN") ~ "East North Central",
@@ -126,16 +116,20 @@ MyFunct04 <- function(Dataset_Mutated) {
     area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
     TRUE ~ "ERROR"
 ))
+return(list(County.Data,NonCounty.Data))
 }
-#Testing the function using the existing EDU01a dataset
-#Dataset_NonCountry <- MyFunct04(Dataset_Mutated)
 
 
-# Fifth Function
-# Rename function using Best Practices Methods
-myFunct05 <- function(){
-  
+#FINAL FUNCTION
+my_wrapper <- function(url) {
+  result <- as.tibble(read_csv(url)) %>% 
+    MyFunct0102 %>%
+    MyFunct03 %>%
+    MyFunct040506
+  print(result)
 }
+
+my_wrapper("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv")
 
 ```
 
