@@ -5,28 +5,37 @@ format: html
 ---
 
 ```{r setup, echo=T, output=F}
-library(tidyverse)
+require(tidyverse)
 options(readr.show_col_types = FALSE)
 ```
 
-Outline:\
-- Data Processing Functions\
-- Combining Data Functions\
-- Generic Functions\
-- Putting it all together\
+Data wrangling can present varying degrees of challenges.  If you are fortunate, issues present in the data your are working with may be corrected with a single line of Base R code in the console.  Data is messy and the task to wrangle it will often require a script of code to prepare it for analysis.
 
+Using data from the Census Bureau's Statistical Compendia Program, we can massage the data into a format we can work with for analysis using the tidyverse.  In the following _Data Processing_ section, the effort to accomplish this task will look manual with a step-by-step demonstration of turning raw data into two tibbles that groups our data geographically using simple tidyverse functions.  In the _Combining Data Functions_ section, I will demonstrate an automative approach through nested functions.  This will allow for the replication of new datasets without having to recreate a new function each time we require the exact formatting using a similar dataset. Finally I will auto-plot the data in the _Putting it all together sections_.
 
 ### Data Processing
 
+We cannot do anything without a dataset.  The first order of business is to introduce data to the R environment.  The readr package can read in our comma-separated value file and insert it as a tibble using the read_csv.  Since we will be working with two similarly-named URLs and datasets, I decided to name the tibble after the file name for organizational purpose.  In the next step, I would change the tibble name using best practices.
+
 ```{r}
 #Read-in the dataset.
-EDU01a <- as_tibble(read.csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"))
+EDU01a <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
+EDU01a
+```
 
+With the data read in, I called on it in R to show how the tibble was structured.  Observe there are 3,198 row over 42 columns of double-character mixed data.  Not all of the columns are useful.  The next tidyverse column operation will be to limit to an object the columns that we are interested in.  Inside the select operation, there is a renaming of column "Area_name" and call to pull all columns ending in "D" using the ends_with operation.     
+
+```{r}
 #1
 #Select specific columns of interest from the dataset.
 My_EDU01a <- EDU01a |>
   select("area_name" = Area_name, STCOU, ends_with("D"))
+My_EDU01a
+```
 
+This looks better but it is still difficult to read and work with.  I want to collapse all columns ending in "D" into one column called "Item_ID".  We can better manage the tibble with the results of this collapse.  
+
+```{r}
 #2
 #Convert the section to long formatting. 
 My_EDU01a <- My_EDU01a |>
@@ -34,7 +43,13 @@ My_EDU01a <- My_EDU01a |>
         cols = ends_with("D"),
         names_to = "Item_ID",
         values_to = "Enrollment_Value")
+My_EDU01a
+```
 
+Each value in the Item_ID column holds two pieces of information--a measurement type and a year.  The first 7 characters corresponds to the measurement type while the last to numerical values represent the year for the measurement.  The measure was straight-forward with a substr call to extract the first 7 characters of the Item_ID column.  We want our year in a four-number format but the dates overlapped with the new century.  This required a case_when approach of making sure all dates that were between 1980 and 1999 inclusive were fit with a "19" prefix; meanwhile, any numbers from 2000 to 2011 inclusive were fit with a "20" prefix.  I used some boolean operations to achieve this by look at the date and assigning it the appropriate prefix. Two new columns were created to show the result of both substr calls in the mutate column operation.
+
+
+```{r}
 #3
 #Parse Strings into numeric, survey, and measurement types.  
 My_EDU01a <- My_EDU01a |>
@@ -42,8 +57,13 @@ My_EDU01a <- My_EDU01a |>
         substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
         substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
         measure = substr(Item_ID, 1, 7))
+My_EDU01a
+```
+
+Our data can be broken out into two buckets; observations that are county and those that are non-county.  I used the filter operation to check each row and assign observations into one of two partitions depending on area_name formating.  I added a column for class that we will use later in the visualization section.
 
 
+```{r}
 # 4 From the parameterized version of the EDU table, I have separated out the two tables by county and non-county. 
 County.Data <- My_EDU01a |> filter(grepl(", [A-Z][A-Z]", area_name))
 NonCounty.Data <- My_EDU01a |> filter(!grepl(", [A-Z][A-Z]", area_name))
@@ -52,10 +72,17 @@ NonCounty.Data <- My_EDU01a |> filter(!grepl(", [A-Z][A-Z]", area_name))
 class(County.Data) <- c("county", class(County.Data))
 class(NonCounty.Data) <- c("state", class(NonCounty.Data))
 
-# 5 Create column that returns State
+County.Data
+NonCounty.Data
+```
+
+The final two steps involve adding a column specific to each tibble.  For the tibble capturing county data, I have added a mutate operation which checks the area_name column and extracts the last two letters to the new column.  The tibble for state was much more complicated.  There exists many divisions that make up areas by state.  I approached this using the case_when operation.  Rows belonging to particular states where funneled into their appropriate divisions.  If the area name did not contain the name of the state the new column value would be assigned "Error".  
+
+```{r}
+# Create column in the County dataset that returns State
 County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
 
-# 6 Create column that returns division conditionally  
+# Create column in the NonCounty dataset that returns division conditionally  
 NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
     area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
     area_name %in% c("NEW JERSEY","NEW YORK","PENNSYLVANIA") ~ "Midwest",
@@ -68,6 +95,9 @@ NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
     area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
     TRUE ~ "ERROR"
 ))
+
+County.Data
+NonCounty.Data
 ```
   
 ### Combining Data Functions
@@ -99,6 +129,7 @@ MyFunct040506 <- function(dataset_partition) {
 #4
 County.Data <- dataset_partition |> filter(grepl(", [A-Z][A-Z]", area_name))
 NonCounty.Data <- dataset_partition |> filter(!grepl(", [A-Z][A-Z]", area_name))
+
 class(County.Data) <- c("county", class(County.Data))
 class(NonCounty.Data) <- c("state", class(NonCounty.Data))
 #5 
@@ -121,7 +152,10 @@ return(list(County.Data,NonCounty.Data))
 
 
 #FINAL FUNCTION
-my_wrapper <- function(url) {
+Split_Data_Along_Geography <- function(url, default_var_name = "https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv") {
+  if (!str_ends(url, ".csv")) {
+    stop("Invalid URL format. Please provide a valid URL ending in '.csv")
+  }
   result <- as.tibble(read_csv(url)) %>% 
     MyFunct0102 %>%
     MyFunct03 %>%
@@ -129,11 +163,50 @@ my_wrapper <- function(url) {
   print(result)
 }
 
-my_wrapper("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv")
+MyEDUO1a_02 <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
+MyEDUO1b_02 <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv")
+
+Reconstituted_MyEDU01a <- dplyr::bind_rows(MyEDUO1a_02)
+Reconstituted_MyEDU01b <- dplyr::bind_rows(MyEDUO1b_02)
+
 
 ```
 
 ### Generic Functions
+```{r}
+#plot the mean value of the statistic Enrollment_Value across years for each division.  
+#X axis = numeric year values, 
+#y axis = mean stat of Enrollment_Value by division and year
+#Remove obsevations that have ERROR in division. 
 
+
+plot.state <- function(df, var_name = "Enrollment_Value"){
+  #Check to make sure the required columns exist in the data frame
+  if (!all("division", "year", var_name) %in% names(df)) {
+    stop("Data must contain one each of the following column headers: Division, Year, and specified 'var_name' input.")
+  }
+  
+  #Remove the "ERROR" values from consideration
+  summart_df
+    summary_df <- df %>%
+    filter(Division != "ERROR") %>%
+    group_by(Division, Year) %>%
+    summarize(mean_value = mean(get(var_name), na.rm = TRUE), .groups = 'drop')
+  
+  # Create the plot
+  ggplot(summary_df, aes(x = Year, y = mean_value, color = Division)) +
+    geom_line() +
+    geom_point() +
+    labs(
+      title = paste("Mean", var_name, "by Division and Year"),
+      x = "Year",
+      y = paste("Mean", var_name)
+    ) +
+    theme_minimal()
+}
+
+
+#plot.state(Reconstituted_MyEDU01a)
+```
 ### Putting it all together
 

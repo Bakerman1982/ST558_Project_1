@@ -104,134 +104,324 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">readr.show_col_types =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Outline:<br>
-- Data Processing Functions<br>
-- Combining Data Functions<br>
-- Generic Functions<br>
-- Putting it all together<br>
-</p>
+<p>Data wrangling can present varying degrees of challenges. If you are fortunate, issues present in the data your are working with may be corrected with a single line of Base R code in the console. Data is messy and the task to wrangle it will often require a script of code to prepare it for analysis.</p>
+<p>Using data from the Census Bureau’s Statistical Compendia Program, we can massage the data into a format we can work with for analysis using the tidyverse. In the following <em>Data Processing</em> section, the effort to accomplish this task will look manual with a step-by-step demonstration of turning raw data into two tibbles that groups our data geographically using simple tidyverse functions. In the <em>Combining Data Functions</em> section, I will demonstrate an automative approach through nested functions. This will allow for the replication of new datasets without having to recreate a new function each time we require the exact formatting using a similar dataset. Finally I will auto-plot the data in the <em>Putting it all together sections</em>.</p>
 <section id="data-processing" class="level3">
 <h3 class="anchored" data-anchor-id="data-processing">Data Processing</h3>
+<p>We cannot do anything without a dataset. The first order of business is to introduce data to the R environment. The readr package can read in our comma-separated value file and insert it as a tibble using the read_csv. Since we will be working with two similarly-named URLs and datasets, I decided to name the tibble after the file name for organizational purpose. In the next step, I would change the tibble name using best practices.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Read-in the dataset.</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>EDU01a <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(<span class="fu">read.csv</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>))</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#1</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">#Select specific columns of interest from the dataset.</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>My_EDU01a <span class="ot">&lt;-</span> EDU01a <span class="sc">|&gt;</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>))</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">#2</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co">#Convert the section to long formatting. </span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>My_EDU01a <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>)</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="co">#3</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">#Parse Strings into numeric, survey, and measurement types.  </span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>My_EDU01a <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">1</span>, <span class="dv">7</span>))</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co"># 4 From the parameterized version of the EDU table, I have separated out the two tables by county and non-county. </span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Add a column that identifies the classification of data we are working with. </span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(County.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"county"</span>, <span class="fu">class</span>(County.Data))</span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(NonCounty.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"state"</span>, <span class="fu">class</span>(NonCounty.Data))</span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="co"># 5 Create column that returns State</span></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> County.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">substr</span>(area_name, <span class="fu">nchar</span>(area_name) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">nchar</span>(area_name)))</span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="co"># 6 Create column that returns division conditionally  </span></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> NonCounty.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">division =</span> <span class="fu">case_when</span>(</span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"CONNECTICUT"</span>,<span class="st">"MAINE"</span>,<span class="st">"MASSACHUSETTS"</span>,<span class="st">"NEW HAMPSHIRE"</span>,<span class="st">"RHODE ISLAND"</span>,<span class="st">"VERMONT"</span>) <span class="sc">~</span> <span class="st">"New England"</span>,</span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"NEW JERSEY"</span>,<span class="st">"NEW YORK"</span>,<span class="st">"PENNSYLVANIA"</span>) <span class="sc">~</span> <span class="st">"Midwest"</span>,</span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ILLINOIS"</span>,<span class="st">"INDIANA"</span>,<span class="st">"MICHIGAN"</span>,<span class="st">"OHIO"</span>,<span class="st">"WISCONSIN"</span>) <span class="sc">~</span> <span class="st">"East North Central"</span>,</span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"IOWA"</span>,<span class="st">"KANSAS"</span>,<span class="st">"MINNESOTA"</span>,<span class="st">"MISSOURI"</span>,<span class="st">"NEBRASKA"</span>,<span class="st">"NORTH DAKOTA"</span>,<span class="st">"SOUTH DAKOTA"</span>) <span class="sc">~</span> <span class="st">"West North Central"</span>,</span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"DELAWARE"</span>,<span class="st">"FLORIDA"</span>,<span class="st">"GEORGIA"</span>,<span class="st">"MARYLAND"</span>,<span class="st">"NORTH CAROLINA"</span>,<span class="st">"SOUTH CAROLINA"</span>,<span class="st">"VIRGINIA"</span>,<span class="st">"WASHINGTON, D.C."</span>,<span class="st">"WEST VIRGINIA"</span>) <span class="sc">~</span> <span class="st">"South Atlantic"</span>,</span>
-<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALABAMA"</span>,<span class="st">"KENTUCKY"</span>,<span class="st">"MISSISSIPPI"</span>,<span class="st">"TENNESSEE"</span>) <span class="sc">~</span> <span class="st">"East South Central"</span>,</span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARKANSAS"</span>,<span class="st">"LOUISIANA"</span>,<span class="st">"OKLAHOMA"</span>,<span class="st">"TEXAS"</span>) <span class="sc">~</span> <span class="st">"West South Central"</span>,</span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARIZONA"</span>,<span class="st">"COLORADO"</span>,<span class="st">"IDAHO"</span>,<span class="st">"MONTANA"</span>,<span class="st">"NEVADA"</span>,<span class="st">"NEW MEXICO"</span>,<span class="st">"UTAH"</span>,<span class="st">"WYOMING"</span>) <span class="sc">~</span> <span class="st">"Mountain"</span>,</span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALASKA"</span>,<span class="st">"CALIFORNIA"</span>,<span class="st">"HAWAII"</span>,<span class="st">"OREGON"</span>,<span class="st">"WASHINGTON"</span>) <span class="sc">~</span> <span class="st">"Pacific"</span>,</span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"ERROR"</span></span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>EDU01a <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>EDU01a</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3,198 × 42
+   Area_name     STCOU EDU010187F EDU010187D EDU010187N1 EDU010187N2 EDU010188F
+   &lt;chr&gt;         &lt;chr&gt;      &lt;dbl&gt;      &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;            &lt;dbl&gt;
+ 1 UNITED STATES 00000          0   40024299 0000        0000                 0
+ 2 ALABAMA       01000          0     733735 0000        0000                 0
+ 3 Autauga, AL   01001          0       6829 0000        0000                 0
+ 4 Baldwin, AL   01003          0      16417 0000        0000                 0
+ 5 Barbour, AL   01005          0       5071 0000        0000                 0
+ 6 Bibb, AL      01007          0       3557 0000        0000                 0
+ 7 Blount, AL    01009          0       7319 0000        0000                 0
+ 8 Bullock, AL   01011          0       2014 0000        0000                 0
+ 9 Butler, AL    01013          0       4640 0000        0000                 0
+10 Calhoun, AL   01015          0      20939 0000        0000                 0
+# ℹ 3,188 more rows
+# ℹ 35 more variables: EDU010188D &lt;dbl&gt;, EDU010188N1 &lt;chr&gt;, EDU010188N2 &lt;chr&gt;,
+#   EDU010189F &lt;dbl&gt;, EDU010189D &lt;dbl&gt;, EDU010189N1 &lt;chr&gt;, EDU010189N2 &lt;chr&gt;,
+#   EDU010190F &lt;dbl&gt;, EDU010190D &lt;dbl&gt;, EDU010190N1 &lt;chr&gt;, EDU010190N2 &lt;chr&gt;,
+#   EDU010191F &lt;dbl&gt;, EDU010191D &lt;dbl&gt;, EDU010191N1 &lt;chr&gt;, EDU010191N2 &lt;chr&gt;,
+#   EDU010192F &lt;dbl&gt;, EDU010192D &lt;dbl&gt;, EDU010192N1 &lt;chr&gt;, EDU010192N2 &lt;chr&gt;,
+#   EDU010193F &lt;dbl&gt;, EDU010193D &lt;dbl&gt;, EDU010193N1 &lt;chr&gt;, EDU010193N2 &lt;chr&gt;, …</code></pre>
+</div>
+</div>
+<p>With the data read in, I called on it in R to show how the tibble was structured. Observe there are 3,198 row over 42 columns of double-character mixed data. Not all of the columns are useful. The next tidyverse column operation will be to limit to an object the columns that we are interested in. Inside the select operation, there is a renaming of column “Area_name” and call to pull all columns ending in “D” using the ends_with operation.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#1</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Select specific columns of interest from the dataset.</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>My_EDU01a <span class="ot">&lt;-</span> EDU01a <span class="sc">|&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>))</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>My_EDU01a</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3,198 × 12
+   area_name     STCOU EDU010187D EDU010188D EDU010189D EDU010190D EDU010191D
+   &lt;chr&gt;         &lt;chr&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;
+ 1 UNITED STATES 00000   40024299   39967624   40317775   40737600   41385442
+ 2 ALABAMA       01000     733735     728234     730048     728252     725541
+ 3 Autauga, AL   01001       6829       6900       6920       6847       7008
+ 4 Baldwin, AL   01003      16417      16465      16799      17054      17479
+ 5 Barbour, AL   01005       5071       5098       5068       5156       5173
+ 6 Bibb, AL      01007       3557       3508       3571       3621       3652
+ 7 Blount, AL    01009       7319       7223       7205       7209       7155
+ 8 Bullock, AL   01011       2014       1980       1985       1983       1985
+ 9 Butler, AL    01013       4640       4582       4610       4591       4544
+10 Calhoun, AL   01015      20939      20923      20907      20849      20768
+# ℹ 3,188 more rows
+# ℹ 5 more variables: EDU010192D &lt;dbl&gt;, EDU010193D &lt;dbl&gt;, EDU010194D &lt;dbl&gt;,
+#   EDU010195D &lt;dbl&gt;, EDU010196D &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<p>This looks better but it is still difficult to read and work with. I want to collapse all columns ending in “D” into one column called “Item_ID”. We can better manage the tibble with the results of this collapse.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#2</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Convert the section to long formatting. </span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>My_EDU01a <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>My_EDU01a</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 31,980 × 4
+   area_name     STCOU Item_ID    Enrollment_Value
+   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt;
+ 1 UNITED STATES 00000 EDU010187D         40024299
+ 2 UNITED STATES 00000 EDU010188D         39967624
+ 3 UNITED STATES 00000 EDU010189D         40317775
+ 4 UNITED STATES 00000 EDU010190D         40737600
+ 5 UNITED STATES 00000 EDU010191D         41385442
+ 6 UNITED STATES 00000 EDU010192D         42088151
+ 7 UNITED STATES 00000 EDU010193D         42724710
+ 8 UNITED STATES 00000 EDU010194D         43369917
+ 9 UNITED STATES 00000 EDU010195D         43993459
+10 UNITED STATES 00000 EDU010196D         44715737
+# ℹ 31,970 more rows</code></pre>
+</div>
+</div>
+<p>Each value in the Item_ID column holds two pieces of information–a measurement type and a year. The first 7 characters corresponds to the measurement type while the last to numerical values represent the year for the measurement. The measure was straight-forward with a substr call to extract the first 7 characters of the Item_ID column. We want our year in a four-number format but the dates overlapped with the new century. This required a case_when approach of making sure all dates that were between 1980 and 1999 inclusive were fit with a “19” prefix; meanwhile, any numbers from 2000 to 2011 inclusive were fit with a “20” prefix. I used some boolean operations to achieve this by look at the date and assigning it the appropriate prefix. Two new columns were created to show the result of both substr calls in the mutate column operation.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#3</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#Parse Strings into numeric, survey, and measurement types.  </span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>My_EDU01a <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">1</span>, <span class="dv">7</span>))</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>My_EDU01a</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 31,980 × 6
+   area_name     STCOU Item_ID    Enrollment_Value year  measure
+   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;  
+ 1 UNITED STATES 00000 EDU010187D         40024299 1987  EDU0101
+ 2 UNITED STATES 00000 EDU010188D         39967624 1988  EDU0101
+ 3 UNITED STATES 00000 EDU010189D         40317775 1989  EDU0101
+ 4 UNITED STATES 00000 EDU010190D         40737600 1990  EDU0101
+ 5 UNITED STATES 00000 EDU010191D         41385442 1991  EDU0101
+ 6 UNITED STATES 00000 EDU010192D         42088151 1992  EDU0101
+ 7 UNITED STATES 00000 EDU010193D         42724710 1993  EDU0101
+ 8 UNITED STATES 00000 EDU010194D         43369917 1994  EDU0101
+ 9 UNITED STATES 00000 EDU010195D         43993459 1995  EDU0101
+10 UNITED STATES 00000 EDU010196D         44715737 1996  EDU0101
+# ℹ 31,970 more rows</code></pre>
+</div>
+</div>
+<p>Our data can be broken out into two buckets; observations that are county and those that are non-county. I used the filter operation to check each row and assign observations into one of two partitions depending on area_name formating. I added a column for class that we will use later in the visualization section.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 4 From the parameterized version of the EDU table, I have separated out the two tables by county and non-county. </span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Add a column that identifies the classification of data we are working with. </span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(County.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"county"</span>, <span class="fu">class</span>(County.Data))</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(NonCounty.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"state"</span>, <span class="fu">class</span>(NonCounty.Data))</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>County.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 31,450 × 6
+   area_name   STCOU Item_ID    Enrollment_Value year  measure
+   &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;  
+ 1 Autauga, AL 01001 EDU010187D             6829 1987  EDU0101
+ 2 Autauga, AL 01001 EDU010188D             6900 1988  EDU0101
+ 3 Autauga, AL 01001 EDU010189D             6920 1989  EDU0101
+ 4 Autauga, AL 01001 EDU010190D             6847 1990  EDU0101
+ 5 Autauga, AL 01001 EDU010191D             7008 1991  EDU0101
+ 6 Autauga, AL 01001 EDU010192D             7137 1992  EDU0101
+ 7 Autauga, AL 01001 EDU010193D             7152 1993  EDU0101
+ 8 Autauga, AL 01001 EDU010194D             7381 1994  EDU0101
+ 9 Autauga, AL 01001 EDU010195D             7568 1995  EDU0101
+10 Autauga, AL 01001 EDU010196D             7834 1996  EDU0101
+# ℹ 31,440 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>NonCounty.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 530 × 6
+   area_name     STCOU Item_ID    Enrollment_Value year  measure
+   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;  
+ 1 UNITED STATES 00000 EDU010187D         40024299 1987  EDU0101
+ 2 UNITED STATES 00000 EDU010188D         39967624 1988  EDU0101
+ 3 UNITED STATES 00000 EDU010189D         40317775 1989  EDU0101
+ 4 UNITED STATES 00000 EDU010190D         40737600 1990  EDU0101
+ 5 UNITED STATES 00000 EDU010191D         41385442 1991  EDU0101
+ 6 UNITED STATES 00000 EDU010192D         42088151 1992  EDU0101
+ 7 UNITED STATES 00000 EDU010193D         42724710 1993  EDU0101
+ 8 UNITED STATES 00000 EDU010194D         43369917 1994  EDU0101
+ 9 UNITED STATES 00000 EDU010195D         43993459 1995  EDU0101
+10 UNITED STATES 00000 EDU010196D         44715737 1996  EDU0101
+# ℹ 520 more rows</code></pre>
+</div>
+</div>
+<p>The final two steps involve adding a column specific to each tibble. For the tibble capturing county data, I have added a mutate operation which checks the area_name column and extracts the last two letters to the new column. The tibble for state was much more complicated. There exists many divisions that make up areas by state. I approached this using the case_when operation. Rows belonging to particular states where funneled into their appropriate divisions. If the area name did not contain the name of the state the new column value would be assigned “Error”.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create column in the County dataset that returns State</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> County.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">substr</span>(area_name, <span class="fu">nchar</span>(area_name) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">nchar</span>(area_name)))</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create column in the NonCounty dataset that returns division conditionally  </span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> NonCounty.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">division =</span> <span class="fu">case_when</span>(</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"CONNECTICUT"</span>,<span class="st">"MAINE"</span>,<span class="st">"MASSACHUSETTS"</span>,<span class="st">"NEW HAMPSHIRE"</span>,<span class="st">"RHODE ISLAND"</span>,<span class="st">"VERMONT"</span>) <span class="sc">~</span> <span class="st">"New England"</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"NEW JERSEY"</span>,<span class="st">"NEW YORK"</span>,<span class="st">"PENNSYLVANIA"</span>) <span class="sc">~</span> <span class="st">"Midwest"</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ILLINOIS"</span>,<span class="st">"INDIANA"</span>,<span class="st">"MICHIGAN"</span>,<span class="st">"OHIO"</span>,<span class="st">"WISCONSIN"</span>) <span class="sc">~</span> <span class="st">"East North Central"</span>,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"IOWA"</span>,<span class="st">"KANSAS"</span>,<span class="st">"MINNESOTA"</span>,<span class="st">"MISSOURI"</span>,<span class="st">"NEBRASKA"</span>,<span class="st">"NORTH DAKOTA"</span>,<span class="st">"SOUTH DAKOTA"</span>) <span class="sc">~</span> <span class="st">"West North Central"</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"DELAWARE"</span>,<span class="st">"FLORIDA"</span>,<span class="st">"GEORGIA"</span>,<span class="st">"MARYLAND"</span>,<span class="st">"NORTH CAROLINA"</span>,<span class="st">"SOUTH CAROLINA"</span>,<span class="st">"VIRGINIA"</span>,<span class="st">"WASHINGTON, D.C."</span>,<span class="st">"WEST VIRGINIA"</span>) <span class="sc">~</span> <span class="st">"South Atlantic"</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALABAMA"</span>,<span class="st">"KENTUCKY"</span>,<span class="st">"MISSISSIPPI"</span>,<span class="st">"TENNESSEE"</span>) <span class="sc">~</span> <span class="st">"East South Central"</span>,</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARKANSAS"</span>,<span class="st">"LOUISIANA"</span>,<span class="st">"OKLAHOMA"</span>,<span class="st">"TEXAS"</span>) <span class="sc">~</span> <span class="st">"West South Central"</span>,</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARIZONA"</span>,<span class="st">"COLORADO"</span>,<span class="st">"IDAHO"</span>,<span class="st">"MONTANA"</span>,<span class="st">"NEVADA"</span>,<span class="st">"NEW MEXICO"</span>,<span class="st">"UTAH"</span>,<span class="st">"WYOMING"</span>) <span class="sc">~</span> <span class="st">"Mountain"</span>,</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALASKA"</span>,<span class="st">"CALIFORNIA"</span>,<span class="st">"HAWAII"</span>,<span class="st">"OREGON"</span>,<span class="st">"WASHINGTON"</span>) <span class="sc">~</span> <span class="st">"Pacific"</span>,</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"ERROR"</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>County.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 31,450 × 7
+   area_name   STCOU Item_ID    Enrollment_Value year  measure state
+   &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;
+ 1 Autauga, AL 01001 EDU010187D             6829 1987  EDU0101 AL   
+ 2 Autauga, AL 01001 EDU010188D             6900 1988  EDU0101 AL   
+ 3 Autauga, AL 01001 EDU010189D             6920 1989  EDU0101 AL   
+ 4 Autauga, AL 01001 EDU010190D             6847 1990  EDU0101 AL   
+ 5 Autauga, AL 01001 EDU010191D             7008 1991  EDU0101 AL   
+ 6 Autauga, AL 01001 EDU010192D             7137 1992  EDU0101 AL   
+ 7 Autauga, AL 01001 EDU010193D             7152 1993  EDU0101 AL   
+ 8 Autauga, AL 01001 EDU010194D             7381 1994  EDU0101 AL   
+ 9 Autauga, AL 01001 EDU010195D             7568 1995  EDU0101 AL   
+10 Autauga, AL 01001 EDU010196D             7834 1996  EDU0101 AL   
+# ℹ 31,440 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>NonCounty.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 530 × 7
+   area_name     STCOU Item_ID    Enrollment_Value year  measure division
+   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;   
+ 1 UNITED STATES 00000 EDU010187D         40024299 1987  EDU0101 ERROR   
+ 2 UNITED STATES 00000 EDU010188D         39967624 1988  EDU0101 ERROR   
+ 3 UNITED STATES 00000 EDU010189D         40317775 1989  EDU0101 ERROR   
+ 4 UNITED STATES 00000 EDU010190D         40737600 1990  EDU0101 ERROR   
+ 5 UNITED STATES 00000 EDU010191D         41385442 1991  EDU0101 ERROR   
+ 6 UNITED STATES 00000 EDU010192D         42088151 1992  EDU0101 ERROR   
+ 7 UNITED STATES 00000 EDU010193D         42724710 1993  EDU0101 ERROR   
+ 8 UNITED STATES 00000 EDU010194D         43369917 1994  EDU0101 ERROR   
+ 9 UNITED STATES 00000 EDU010195D         43993459 1995  EDU0101 ERROR   
+10 UNITED STATES 00000 EDU010196D         44715737 1996  EDU0101 ERROR   
+# ℹ 520 more rows</code></pre>
+</div>
 </div>
 </section>
 <section id="combining-data-functions" class="level3">
 <h3 class="anchored" data-anchor-id="combining-data-functions">Combining Data Functions</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First Function performs steps 1 and 2 in earlier example. </span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>MyFunct0102 <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset_select_pivot) {</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  dataset_select_pivot <span class="sc">%&gt;%</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pivot_longer</span>(</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Second Function performs step 3 in earlier example. </span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>MyFunct03 <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset_mutate) {</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  dataset_mutate <span class="sc">%&gt;%</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">1</span>, <span class="dv">7</span>))</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Third Function that performs steps 4,5,6 in the earlier example.</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>MyFunct040506 <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset_partition) {</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">#4</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> dataset_partition <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> dataset_partition <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(County.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"county"</span>, <span class="fu">class</span>(County.Data))</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(NonCounty.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"state"</span>, <span class="fu">class</span>(NonCounty.Data))</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="co">#5 </span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> County.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">substr</span>(area_name, <span class="fu">nchar</span>(area_name) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">nchar</span>(area_name)))</span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co">#6</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> NonCounty.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">division =</span> <span class="fu">case_when</span>(</span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"CONNECTICUT"</span>,<span class="st">"MAINE"</span>,<span class="st">"MASSACHUSETTS"</span>,<span class="st">"NEW HAMPSHIRE"</span>,<span class="st">"RHODE ISLAND"</span>,<span class="st">"VERMONT"</span>) <span class="sc">~</span> <span class="st">"New England"</span>,</span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"NEW JERSEY"</span>,<span class="st">"NEW YORK"</span>,<span class="st">"PENNSYLVANIA"</span>) <span class="sc">~</span> <span class="st">"Midwest"</span>,</span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ILLINOIS"</span>,<span class="st">"INDIANA"</span>,<span class="st">"MICHIGAN"</span>,<span class="st">"OHIO"</span>,<span class="st">"WISCONSIN"</span>) <span class="sc">~</span> <span class="st">"East North Central"</span>,</span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"IOWA"</span>,<span class="st">"KANSAS"</span>,<span class="st">"MINNESOTA"</span>,<span class="st">"MISSOURI"</span>,<span class="st">"NEBRASKA"</span>,<span class="st">"NORTH DAKOTA"</span>,<span class="st">"SOUTH DAKOTA"</span>) <span class="sc">~</span> <span class="st">"West North Central"</span>,</span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"DELAWARE"</span>,<span class="st">"FLORIDA"</span>,<span class="st">"GEORGIA"</span>,<span class="st">"MARYLAND"</span>,<span class="st">"NORTH CAROLINA"</span>,<span class="st">"SOUTH CAROLINA"</span>,<span class="st">"VIRGINIA"</span>,<span class="st">"WASHINGTON, D.C."</span>,<span class="st">"WEST VIRGINIA"</span>) <span class="sc">~</span> <span class="st">"South Atlantic"</span>,</span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALABAMA"</span>,<span class="st">"KENTUCKY"</span>,<span class="st">"MISSISSIPPI"</span>,<span class="st">"TENNESSEE"</span>) <span class="sc">~</span> <span class="st">"East South Central"</span>,</span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARKANSAS"</span>,<span class="st">"LOUISIANA"</span>,<span class="st">"OKLAHOMA"</span>,<span class="st">"TEXAS"</span>) <span class="sc">~</span> <span class="st">"West South Central"</span>,</span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARIZONA"</span>,<span class="st">"COLORADO"</span>,<span class="st">"IDAHO"</span>,<span class="st">"MONTANA"</span>,<span class="st">"NEVADA"</span>,<span class="st">"NEW MEXICO"</span>,<span class="st">"UTAH"</span>,<span class="st">"WYOMING"</span>) <span class="sc">~</span> <span class="st">"Mountain"</span>,</span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALASKA"</span>,<span class="st">"CALIFORNIA"</span>,<span class="st">"HAWAII"</span>,<span class="st">"OREGON"</span>,<span class="st">"WASHINGTON"</span>) <span class="sc">~</span> <span class="st">"Pacific"</span>,</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"ERROR"</span></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="fu">return</span>(<span class="fu">list</span>(County.Data,NonCounty.Data))</span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="co">#FINAL FUNCTION</span></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>my_wrapper <span class="ot">&lt;-</span> <span class="cf">function</span>(url) {</span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">as.tibble</span>(<span class="fu">read_csv</span>(url)) <span class="sc">%&gt;%</span> </span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>    MyFunct0102 <span class="sc">%&gt;%</span></span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>    MyFunct03 <span class="sc">%&gt;%</span></span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>    MyFunct040506</span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(result)</span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="fu">my_wrapper</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First Function performs steps 1 and 2 in earlier example. </span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>MyFunct0102 <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset_select_pivot) {</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  dataset_select_pivot <span class="sc">%&gt;%</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pivot_longer</span>(</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Second Function performs step 3 in earlier example. </span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>MyFunct03 <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset_mutate) {</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  dataset_mutate <span class="sc">%&gt;%</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">1</span>, <span class="dv">7</span>))</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Third Function that performs steps 4,5,6 in the earlier example.</span></span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>MyFunct040506 <span class="ot">&lt;-</span> <span class="cf">function</span>(dataset_partition) {</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a><span class="co">#4</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> dataset_partition <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> dataset_partition <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(County.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"county"</span>, <span class="fu">class</span>(County.Data))</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(NonCounty.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"state"</span>, <span class="fu">class</span>(NonCounty.Data))</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="co">#5 </span></span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> County.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">substr</span>(area_name, <span class="fu">nchar</span>(area_name) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">nchar</span>(area_name)))</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a><span class="co">#6</span></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> NonCounty.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">division =</span> <span class="fu">case_when</span>(</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"CONNECTICUT"</span>,<span class="st">"MAINE"</span>,<span class="st">"MASSACHUSETTS"</span>,<span class="st">"NEW HAMPSHIRE"</span>,<span class="st">"RHODE ISLAND"</span>,<span class="st">"VERMONT"</span>) <span class="sc">~</span> <span class="st">"New England"</span>,</span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"NEW JERSEY"</span>,<span class="st">"NEW YORK"</span>,<span class="st">"PENNSYLVANIA"</span>) <span class="sc">~</span> <span class="st">"Midwest"</span>,</span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ILLINOIS"</span>,<span class="st">"INDIANA"</span>,<span class="st">"MICHIGAN"</span>,<span class="st">"OHIO"</span>,<span class="st">"WISCONSIN"</span>) <span class="sc">~</span> <span class="st">"East North Central"</span>,</span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"IOWA"</span>,<span class="st">"KANSAS"</span>,<span class="st">"MINNESOTA"</span>,<span class="st">"MISSOURI"</span>,<span class="st">"NEBRASKA"</span>,<span class="st">"NORTH DAKOTA"</span>,<span class="st">"SOUTH DAKOTA"</span>) <span class="sc">~</span> <span class="st">"West North Central"</span>,</span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"DELAWARE"</span>,<span class="st">"FLORIDA"</span>,<span class="st">"GEORGIA"</span>,<span class="st">"MARYLAND"</span>,<span class="st">"NORTH CAROLINA"</span>,<span class="st">"SOUTH CAROLINA"</span>,<span class="st">"VIRGINIA"</span>,<span class="st">"WASHINGTON, D.C."</span>,<span class="st">"WEST VIRGINIA"</span>) <span class="sc">~</span> <span class="st">"South Atlantic"</span>,</span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALABAMA"</span>,<span class="st">"KENTUCKY"</span>,<span class="st">"MISSISSIPPI"</span>,<span class="st">"TENNESSEE"</span>) <span class="sc">~</span> <span class="st">"East South Central"</span>,</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARKANSAS"</span>,<span class="st">"LOUISIANA"</span>,<span class="st">"OKLAHOMA"</span>,<span class="st">"TEXAS"</span>) <span class="sc">~</span> <span class="st">"West South Central"</span>,</span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARIZONA"</span>,<span class="st">"COLORADO"</span>,<span class="st">"IDAHO"</span>,<span class="st">"MONTANA"</span>,<span class="st">"NEVADA"</span>,<span class="st">"NEW MEXICO"</span>,<span class="st">"UTAH"</span>,<span class="st">"WYOMING"</span>) <span class="sc">~</span> <span class="st">"Mountain"</span>,</span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>    area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALASKA"</span>,<span class="st">"CALIFORNIA"</span>,<span class="st">"HAWAII"</span>,<span class="st">"OREGON"</span>,<span class="st">"WASHINGTON"</span>) <span class="sc">~</span> <span class="st">"Pacific"</span>,</span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"ERROR"</span></span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a><span class="fu">return</span>(<span class="fu">list</span>(County.Data,NonCounty.Data))</span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a><span class="co">#FINAL FUNCTION</span></span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a>Split_Data_Along_Geography <span class="ot">&lt;-</span> <span class="cf">function</span>(url, <span class="at">default_var_name =</span> <span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>) {</span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">str_ends</span>(url, <span class="st">".csv"</span>)) {</span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid URL format. Please provide a valid URL ending in '.csv"</span>)</span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">as.tibble</span>(<span class="fu">read_csv</span>(url)) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a>    MyFunct0102 <span class="sc">%&gt;%</span></span>
+<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a>    MyFunct03 <span class="sc">%&gt;%</span></span>
+<span id="cb18-57"><a href="#cb18-57" aria-hidden="true" tabindex="-1"></a>    MyFunct040506</span>
+<span id="cb18-58"><a href="#cb18-58" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(result)</span>
+<span id="cb18-59"><a href="#cb18-59" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb18-60"><a href="#cb18-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-61"><a href="#cb18-61" aria-hidden="true" tabindex="-1"></a>MyEDUO1a_02 <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: `as.tibble()` was deprecated in tibble 2.0.0.
 ℹ Please use `as_tibble()` instead.
 ℹ The signature and semantics have changed, see `?as_tibble`.</code></pre>
 </div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+# A tibble: 31,450 × 7
+   area_name   STCOU Item_ID    Enrollment_Value year  measure state
+   &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;
+ 1 Autauga, AL 01001 EDU010187D             6829 1987  EDU0101 AL   
+ 2 Autauga, AL 01001 EDU010188D             6900 1988  EDU0101 AL   
+ 3 Autauga, AL 01001 EDU010189D             6920 1989  EDU0101 AL   
+ 4 Autauga, AL 01001 EDU010190D             6847 1990  EDU0101 AL   
+ 5 Autauga, AL 01001 EDU010191D             7008 1991  EDU0101 AL   
+ 6 Autauga, AL 01001 EDU010192D             7137 1992  EDU0101 AL   
+ 7 Autauga, AL 01001 EDU010193D             7152 1993  EDU0101 AL   
+ 8 Autauga, AL 01001 EDU010194D             7381 1994  EDU0101 AL   
+ 9 Autauga, AL 01001 EDU010195D             7568 1995  EDU0101 AL   
+10 Autauga, AL 01001 EDU010196D             7834 1996  EDU0101 AL   
+# ℹ 31,440 more rows
+
+[[2]]
+# A tibble: 530 × 7
+   area_name     STCOU Item_ID    Enrollment_Value year  measure division
+   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;   
+ 1 UNITED STATES 00000 EDU010187D         40024299 1987  EDU0101 ERROR   
+ 2 UNITED STATES 00000 EDU010188D         39967624 1988  EDU0101 ERROR   
+ 3 UNITED STATES 00000 EDU010189D         40317775 1989  EDU0101 ERROR   
+ 4 UNITED STATES 00000 EDU010190D         40737600 1990  EDU0101 ERROR   
+ 5 UNITED STATES 00000 EDU010191D         41385442 1991  EDU0101 ERROR   
+ 6 UNITED STATES 00000 EDU010192D         42088151 1992  EDU0101 ERROR   
+ 7 UNITED STATES 00000 EDU010193D         42724710 1993  EDU0101 ERROR   
+ 8 UNITED STATES 00000 EDU010194D         43369917 1994  EDU0101 ERROR   
+ 9 UNITED STATES 00000 EDU010195D         43993459 1995  EDU0101 ERROR   
+10 UNITED STATES 00000 EDU010196D         44715737 1996  EDU0101 ERROR   
+# ℹ 520 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>MyEDUO1b_02 <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[[1]]
 # A tibble: 31,450 × 7
@@ -265,10 +455,47 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 10 UNITED STATES 00000 EDU015206D         49140702 2006  EDU0152 ERROR   
 # ℹ 520 more rows</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>Reconstituted_MyEDU01a <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(MyEDUO1a_02)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>Reconstituted_MyEDU01b <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(MyEDUO1b_02)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="generic-functions" class="level3">
 <h3 class="anchored" data-anchor-id="generic-functions">Generic Functions</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">#plot the mean value of the statistic Enrollment_Value across years for each division.  </span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="co">#X axis = numeric year values, </span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co">#y axis = mean stat of Enrollment_Value by division and year</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Remove obsevations that have ERROR in division. </span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>plot.state <span class="ot">&lt;-</span> <span class="cf">function</span>(df, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>){</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Check to make sure the required columns exist in the data frame</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">all</span>(<span class="st">"division"</span>, <span class="st">"year"</span>, var_name) <span class="sc">%in%</span> <span class="fu">names</span>(df)) {</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Data must contain one each of the following column headers: Division, Year, and specified 'var_name' input."</span>)</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Remove the "ERROR" values from consideration</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>  summart_df</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    summary_df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(Division <span class="sc">!=</span> <span class="st">"ERROR"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(Division, Year) <span class="sc">%&gt;%</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="at">mean_value =</span> <span class="fu">mean</span>(<span class="fu">get</span>(var_name), <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">'drop'</span>)</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create the plot</span></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(summary_df, <span class="fu">aes</span>(<span class="at">x =</span> Year, <span class="at">y =</span> mean_value, <span class="at">color =</span> Division)) <span class="sc">+</span></span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(</span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>      <span class="at">title =</span> <span class="fu">paste</span>(<span class="st">"Mean"</span>, var_name, <span class="st">"by Division and Year"</span>),</span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>      <span class="at">x =</span> <span class="st">"Year"</span>,</span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>      <span class="at">y =</span> <span class="fu">paste</span>(<span class="st">"Mean"</span>, var_name)</span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a><span class="co">#plot.state(Reconstituted_MyEDU01a)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 </section>
 <section id="putting-it-all-together" class="level3">
 <h3 class="anchored" data-anchor-id="putting-it-all-together">Putting it all together</h3>
