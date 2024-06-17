@@ -234,10 +234,15 @@ plot.state <- function(df.state, var_name = "Enrollment_Value") {
   
   }
 
-plot.county <- function(df.county, var_name = "Enrollment_Value"){
-  
-}
+plot.county <- function(df.county, state_abbrev="FL", Top_or_Bottom = "top", Top_Bottom_Count = 5, var_name = "Enrollment_Value") {
+      df_filtered <- df.county %>%
+        filter(state = state) %>%
+        
+      #group_by(division, year) %>%
+      summarize(mean_enrollment = mean(get(var_name), na.rm = TRUE))
 
+}
+MyEDUO1b_Tibble_Wrapped$County_Data
 
 
 # A decision wrapper function that takes the inputs data frame and the class needing plotted, and var_name and funnels the df through the appropriate class-based plotting function
@@ -283,3 +288,39 @@ plot.state(MyEDUO1b_Tibble_Wrapped)
 
 ### Putting it all together
 
+```{r}
+analyze_state_data <- function(data, state = "California", var_name, top_or_bottom = "top", n = 5) {
+  # Ensure the inputs are correctly formatted
+  state <- as.character(state)
+  var_name <- as.character(var_name)
+  top_or_bottom <- match.arg(top_or_bottom, choices = c("top", "bottom"))
+  n <- as.integer(n)
+  
+  # 1. Filter the data to only include the specified state
+  state_data <- subset(data, State == state)
+  
+  # 2. Find the mean of the statistic for each Area_name
+  means_by_area <- aggregate(get(var_name) ~ Area_name, data = state_data, FUN = mean)
+  colnames(means_by_area)[2] <- "mean_stat"  # Rename the second column to "mean_stat"
+  
+  # 3. Sort values according to the top or bottom specification
+  if (top_or_bottom == "top") {
+    sorted_means <- means_by_area[order(-means_by_area$mean_stat), ]
+  } else {
+    sorted_means <- means_by_area[order(means_by_area$mean_stat), ]
+  }
+  
+  # 4. Obtain the top or bottom x number of Area_names
+  top_bottom_areas <- head(sorted_means, n)
+  
+  # 5. Filter the state data to only include these top or bottom Area_names
+  filtered_data <- subset(state_data, Area_name %in% top_bottom_areas$Area_name)
+  
+  return(filtered_data)
+}
+
+# Example usage:
+# Suppose `data` is your data frame and 'statistic_column' is the column name of the statistic you are interested in.
+# filtered_data <- analyze_state_data(data, state = "New York", var_name = "statistic_column", top_or_bottom = "bottom", n = 10)
+
+```
