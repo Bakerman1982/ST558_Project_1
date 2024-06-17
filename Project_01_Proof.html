@@ -109,8 +109,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Data wrangling can present varying degrees of challenges. If you are fortunate, issues present in the data your are working with may be corrected with a single line of Base R code in the console. Data is messy and the task to wrangle it will often require a script of code to prepare it for analysis.</p>
 <p>Using data from the Census Bureau’s Statistical Compendia Program, we can massage the data into a format we can work with for analysis using the tidyverse. In the following <em>Data Processing</em> section, the effort to accomplish this task will look manual with a step-by-step demonstration of turning raw data into two tibbles that groups our data geographically using simple tidyverse functions. In the <em>Combining Data Functions</em> section, I will demonstrate an automative approach through nested functions. This will allow for the replication of new datasets without having to recreate a new function each time we require the exact formatting using a similar dataset. Finally I will auto-plot the data in the <em>Putting it all together sections</em>.</p>
-<section id="data-processing" class="level3">
-<h3 class="anchored" data-anchor-id="data-processing">Data Processing</h3>
+<section id="data-processing" class="level1">
+<h1>Data Processing</h1>
 <p>We cannot do anything without a dataset. The first order of business is to introduce data to the R environment. The readr package can read in our comma-separated value file and insert it as a tibble using the read_csv. Since we will be working with two similarly-named URLs and datasets, I decided to name the tibble after the file name for organizational purpose. In the next step, I would change the tibble name using best practices.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Read-in the dataset.</span></span>
@@ -319,8 +319,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
-<section id="combining-data-functions" class="level3">
-<h3 class="anchored" data-anchor-id="combining-data-functions">Combining Data Functions</h3>
+<section id="combining-data-functions" class="level1">
+<h1>Combining Data Functions</h1>
 <p>Instead of running each individual code chunk, we could create a function</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First Function performs steps 1 and 2 in earlier example. </span></span>
@@ -394,15 +394,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb18-69"><a href="#cb18-69" aria-hidden="true" tabindex="-1"></a>    MyFunct0102 <span class="sc">%&gt;%</span> <span class="co">#Selects/Pivots Data</span></span>
 <span id="cb18-70"><a href="#cb18-70" aria-hidden="true" tabindex="-1"></a>    MyFunct03 <span class="sc">%&gt;%</span> <span class="co">#Creates new columns for measuring and date=year</span></span>
 <span id="cb18-71"><a href="#cb18-71" aria-hidden="true" tabindex="-1"></a>    MyFunct04 <span class="co">#Performs the split, mutate and class call on the dataset</span></span>
-<span id="cb18-72"><a href="#cb18-72" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(result)</span>
+<span id="cb18-72"><a href="#cb18-72" aria-hidden="true" tabindex="-1"></a>  <span class="co">#print(result)</span></span>
 <span id="cb18-73"><a href="#cb18-73" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Call it and Combine your Data</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>MyEDUO1a_Tibble_Wrapped <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>, Enrollment_Value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Call it and Combine your Data.  Testing to see if the URLs produce the intended outcome so far. </span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>MyEDUO1a_Tibble_Wrapped <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>, Enrollment_Value)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>MyEDUO1b_Tibble_Wrapped <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>, Enrollment_Value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># This function automates the step above, taking two URLs and producing a list of combined Tibbles seperated by County and NonCounty. </span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>combine_results <span class="ot">&lt;-</span> <span class="cf">function</span>(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped) {</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  combined_county <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(MyEDUO1a_Tibble_Wrapped<span class="sc">$</span>County_Data, MyEDUO1b_Tibble_Wrapped<span class="sc">$</span>County_Data)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  combined_NonCounty <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(MyEDUO1a_Tibble_Wrapped<span class="sc">$</span>NonCounty_Data, MyEDUO1b_Tibble_Wrapped<span class="sc">$</span>NonCounty_Data)</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(combined_county,combined_NonCounty))}</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="fu">combine_results</span>(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>$County_Data
-# A tibble: 31,450 × 7
+<pre><code>[[1]]
+# A tibble: 62,900 × 7
    area_name   STCOU Item_ID    Enrollment_Value year  measure state
    &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;
  1 Autauga, AL 01001 EDU010187D             6829 1987  EDU0101 AL   
@@ -415,10 +425,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  8 Autauga, AL 01001 EDU010194D             7381 1994  EDU0101 AL   
  9 Autauga, AL 01001 EDU010195D             7568 1995  EDU0101 AL   
 10 Autauga, AL 01001 EDU010196D             7834 1996  EDU0101 AL   
-# ℹ 31,440 more rows
+# ℹ 62,890 more rows
 
-$NonCounty_Data
-# A tibble: 530 × 7
+[[2]]
+# A tibble: 1,060 × 7
    area_name     STCOU Item_ID    Enrollment_Value year  measure division
    &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;   
  1 UNITED STATES 00000 EDU010187D         40024299 1987  EDU0101 ERROR   
@@ -431,50 +441,19 @@ $NonCounty_Data
  8 UNITED STATES 00000 EDU010194D         43369917 1994  EDU0101 ERROR   
  9 UNITED STATES 00000 EDU010195D         43993459 1995  EDU0101 ERROR   
 10 UNITED STATES 00000 EDU010196D         44715737 1996  EDU0101 ERROR   
-# ℹ 520 more rows</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>MyEDUO1b_Tibble_Wrapped <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>, Enrollment_Value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>$County_Data
-# A tibble: 31,450 × 7
-   area_name   STCOU Item_ID    Enrollment_Value year  measure state
-   &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;
- 1 Autauga, AL 01001 EDU010197D             8099 1997  EDU0101 AL   
- 2 Autauga, AL 01001 EDU010198D             8211 1998  EDU0101 AL   
- 3 Autauga, AL 01001 EDU010199D             8489 1999  EDU0101 AL   
- 4 Autauga, AL 01001 EDU010200D             8912 2000  EDU0102 AL   
- 5 Autauga, AL 01001 EDU010201D             8626 2001  EDU0102 AL   
- 6 Autauga, AL 01001 EDU010202D             8762 2002  EDU0102 AL   
- 7 Autauga, AL 01001 EDU015203D             9105 2003  EDU0152 AL   
- 8 Autauga, AL 01001 EDU015204D             9200 2004  EDU0152 AL   
- 9 Autauga, AL 01001 EDU015205D             9559 2005  EDU0152 AL   
-10 Autauga, AL 01001 EDU015206D             9652 2006  EDU0152 AL   
-# ℹ 31,440 more rows
-
-$NonCounty_Data
-# A tibble: 530 × 7
-   area_name     STCOU Item_ID    Enrollment_Value year  measure division
-   &lt;chr&gt;         &lt;chr&gt; &lt;chr&gt;                 &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;   
- 1 UNITED STATES 00000 EDU010197D         44534459 1997  EDU0101 ERROR   
- 2 UNITED STATES 00000 EDU010198D         46245814 1998  EDU0101 ERROR   
- 3 UNITED STATES 00000 EDU010199D         46368903 1999  EDU0101 ERROR   
- 4 UNITED STATES 00000 EDU010200D         46818690 2000  EDU0102 ERROR   
- 5 UNITED STATES 00000 EDU010201D         47127066 2001  EDU0102 ERROR   
- 6 UNITED STATES 00000 EDU010202D         47606570 2002  EDU0102 ERROR   
- 7 UNITED STATES 00000 EDU015203D         48506317 2003  EDU0152 ERROR   
- 8 UNITED STATES 00000 EDU015204D         48693287 2004  EDU0152 ERROR   
- 9 UNITED STATES 00000 EDU015205D         48978555 2005  EDU0152 ERROR   
-10 UNITED STATES 00000 EDU015206D         49140702 2006  EDU0152 ERROR   
-# ℹ 520 more rows</code></pre>
+# ℹ 1,050 more rows</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>combine_results <span class="ot">&lt;-</span> <span class="cf">function</span>(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped) {</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  combined_county <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(MyEDUO1a_Tibble_Wrapped<span class="sc">$</span>County_Data, MyEDUO1b_Tibble_Wrapped<span class="sc">$</span>County_Data)</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  combined_NonCounty <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(MyEDUO1a_Tibble_Wrapped<span class="sc">$</span>NonCounty_Data, MyEDUO1b_Tibble_Wrapped<span class="sc">$</span>NonCounty_Data)</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(combined_county,combined_NonCounty))}</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="fu">combine_results</span>(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>combine_results <span class="ot">&lt;-</span> <span class="cf">function</span>(url1, url2, <span class="at">Enrollment_Values =</span> <span class="st">"Enrollment_Values"</span>){</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  result1 <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(url1)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  result2 <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(url2)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  combined_county <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(result1<span class="sc">$</span>County_Data, result2<span class="sc">$</span>County_Data)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  combined_NonCounty <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(result1<span class="sc">$</span>NonCounty_Data, result2<span class="sc">$</span>NonCounty_Data)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(combined_county,combined_NonCounty))}</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co">#example</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="fu">combine_results</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>,<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>,Enrollment_Values)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[[1]]
 # A tibble: 62,900 × 7
@@ -510,46 +489,30 @@ $NonCounty_Data
 </div>
 </div>
 </section>
-<section id="generic-functions" class="level3">
-<h3 class="anchored" data-anchor-id="generic-functions">Generic Functions</h3>
+<section id="generic-functions" class="level1">
+<h1>Generic Functions</h1>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co">#plot the mean value of the statistic Enrollment_Value across years for each division.  </span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="co">#X axis = numeric year values, </span></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co">#y axis = mean stat of Enrollment_Value by division and year</span></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Remove obsevations that have ERROR in division. </span></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>plot.state <span class="ot">&lt;-</span> <span class="cf">function</span>(df, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>){</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Check to make sure the required columns exist in the data frame</span></span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">all</span>(<span class="st">"division"</span>, <span class="st">"year"</span>, var_name) <span class="sc">%in%</span> <span class="fu">names</span>(df)) {</span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Data must contain one each of the following column headers: Division, Year, and specified 'var_name' input."</span>)</span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Remove the "ERROR" values from consideration</span></span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>  summart_df</span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    summary_df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(Division <span class="sc">!=</span> <span class="st">"ERROR"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(Division, Year) <span class="sc">%&gt;%</span></span>
-<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="at">mean_value =</span> <span class="fu">mean</span>(<span class="fu">get</span>(var_name), <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">'drop'</span>)</span>
-<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create the plot</span></span>
-<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(summary_df, <span class="fu">aes</span>(<span class="at">x =</span> Year, <span class="at">y =</span> mean_value, <span class="at">color =</span> Division)) <span class="sc">+</span></span>
-<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(</span>
-<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>      <span class="at">title =</span> <span class="fu">paste</span>(<span class="st">"Mean"</span>, var_name, <span class="st">"by Division and Year"</span>),</span>
-<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>      <span class="at">x =</span> <span class="st">"Year"</span>,</span>
-<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>      <span class="at">y =</span> <span class="fu">paste</span>(<span class="st">"Mean"</span>, var_name)</span>
-<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
-<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_minimal</span>()</span>
-<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a><span class="co">#plot.state(Reconstituted_MyEDU01a)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>plot.state <span class="ot">&lt;-</span> <span class="cf">function</span>(df, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>) {</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter out rows where Division is "ERROR" and compute mean enrollment of the input var_name, all by division and year.</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  df_filtered <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(division <span class="sc">!=</span> <span class="st">"ERROR"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(division, year) <span class="sc">%&gt;%</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarize</span>(<span class="at">mean_enrollment =</span> <span class="fu">mean</span>(<span class="fu">get</span>(var_name), <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Plot the input</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(df_filtered, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> mean_enrollment, <span class="at">color =</span> division))<span class="sc">+</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">group =</span> division)) <span class="sc">+</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Mean Enrollment Values"</span>) <span class="sc">+</span> </span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggtitle</span>(<span class="fu">paste</span>(<span class="st">"Mean"</span>, var_name, <span class="st">"across years by division"</span>))</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a><span class="co">#plot.state(df, var_name = "Enrollment_Value")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</section>
 <section id="putting-it-all-together" class="level3">
 <h3 class="anchored" data-anchor-id="putting-it-all-together">Putting it all together</h3>
+</section>
 </section>
 
 </main>

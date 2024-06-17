@@ -13,7 +13,7 @@ Data wrangling can present varying degrees of challenges.  If you are fortunate,
 
 Using data from the Census Bureau's Statistical Compendia Program, we can massage the data into a format we can work with for analysis using the tidyverse.  In the following _Data Processing_ section, the effort to accomplish this task will look manual with a step-by-step demonstration of turning raw data into two tibbles that groups our data geographically using simple tidyverse functions.  In the _Combining Data Functions_ section, I will demonstrate an automative approach through nested functions.  This will allow for the replication of new datasets without having to recreate a new function each time we require the exact formatting using a similar dataset. Finally I will auto-plot the data in the _Putting it all together sections_.
 
-### Data Processing
+# Data Processing
 
 We cannot do anything without a dataset.  The first order of business is to introduce data to the R environment.  The readr package can read in our comma-separated value file and insert it as a tibble using the read_csv.  Since we will be working with two similarly-named URLs and datasets, I decided to name the tibble after the file name for organizational purpose.  In the next step, I would change the tibble name using best practices.
 
@@ -102,9 +102,8 @@ NonCounty.Data
 
 
 
-
   
-### Combining Data Functions
+# Combining Data Functions
 
 Instead of running each individual code chunk, we could create a function 
 
@@ -180,65 +179,107 @@ Split_Data_Along_Geography <- function(url, Enrollment_Value = "Enrollment_Value
     MyFunct0102 %>% #Selects/Pivots Data
     MyFunct03 %>% #Creates new columns for measuring and date=year
     MyFunct04 #Performs the split, mutate and class call on the dataset
-  print(result)
+  #print(result)
 }
 ```
 
 
 ```{r}
-# Call it and Combine your Data
+# Call it and Combine your Data.  Testing to see if the URLs produce the intended outcome so far. 
 MyEDUO1a_Tibble_Wrapped <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", Enrollment_Value)
 MyEDUO1b_Tibble_Wrapped <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", Enrollment_Value)
 ```
 
 
 ```{r}
-
+# This function automates the step above, taking two URLs and producing a list of combined Tibbles seperated by County and NonCounty. 
 combine_results <- function(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped) {
   combined_county <- dplyr::bind_rows(MyEDUO1a_Tibble_Wrapped$County_Data, MyEDUO1b_Tibble_Wrapped$County_Data)
   combined_NonCounty <- dplyr::bind_rows(MyEDUO1a_Tibble_Wrapped$NonCounty_Data, MyEDUO1b_Tibble_Wrapped$NonCounty_Data)
   return(list(combined_county,combined_NonCounty))}
 
 combine_results(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped)
+```
+```{r}
+combine_results <- function(url1, url2, Enrollment_Values = "Enrollment_Values"){
+  result1 <- Split_Data_Along_Geography(url1)
+  result2 <- Split_Data_Along_Geography(url2)
+  combined_county <- dplyr::bind_rows(result1$County_Data, result2$County_Data)
+  combined_NonCounty <- dplyr::bind_rows(result1$NonCounty_Data, result2$NonCounty_Data)
+  return(list(combined_county,combined_NonCounty))}
 
+#example
+combine_results("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv","https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv",Enrollment_Values)
 ```
 
 
-### Generic Functions
+
+
+# Generic Functions
+
 ```{r}
-#plot the mean value of the statistic Enrollment_Value across years for each division.  
-#X axis = numeric year values, 
-#y axis = mean stat of Enrollment_Value by division and year
-#Remove obsevations that have ERROR in division. 
+plot.state <- function(df.state, var_name = "Enrollment_Value") {
+  # Filter out rows where Division is "ERROR" and compute mean enrollment of the input var_name, all by division and year.
+  df_filtered <- df.state %>%
+    filter(division != "ERROR") %>%
+    group_by(division, year) %>%
+    summarize(mean_enrollment = mean(get(var_name), na.rm = TRUE))
 
-
-plot.state <- function(df, var_name = "Enrollment_Value"){
-  #Check to make sure the required columns exist in the data frame
-  if (!all("division", "year", var_name) %in% names(df)) {
-    stop("Data must contain one each of the following column headers: Division, Year, and specified 'var_name' input.")
-  }
-  
-  #Remove the "ERROR" values from consideration
-  summart_df
-    summary_df <- df %>%
-    filter(Division != "ERROR") %>%
-    group_by(Division, Year) %>%
-    summarize(mean_value = mean(get(var_name), na.rm = TRUE), .groups = 'drop')
-  
-  # Create the plot
-  ggplot(summary_df, aes(x = Year, y = mean_value, color = Division)) +
-    geom_line() +
+  # Plot the input
+  ggplot(df_filtered, aes(x = year, y = mean_enrollment, color = division))+
+    geom_line(aes(group = division)) +
     geom_point() +
-    labs(
-      title = paste("Mean", var_name, "by Division and Year"),
-      x = "Year",
-      y = paste("Mean", var_name)
-    ) +
-    theme_minimal()
+    labs(x = "Year", y = "Mean Enrollment Values") + 
+    ggtitle(paste("Mean", var_name, "across years by division"))
+  
+  }
+
+plot.county <- function(df.county, var_name = "Enrollment_Value"){
+  
 }
 
 
-#plot.state(Reconstituted_MyEDU01a)
+
+# A decision wrapper function that takes the inputs data frame and the class needing plotted, and var_name and funnels the df through the appropriate class-based plotting function
+
+plot_by_class <- function(df, class_type, var_name = "Enrollment_Value"){
+  #Stops function to abruptly stop the plot_by_class function if the df is not a list of tibbles
+  if(!is.list(df)){
+    stop("Input 'df' should be a list of tibbles.")
+  }
+  
+  #Checks list of tibbles and depending on class_type called identifies and assigns the tibble to variable tibble_plot which will be used later in the wrapper function to plot.
+  tibble_plot <- NULL
+  for (item in df){
+    if (inherits(item,class_type)) {
+      tibble_plot <- item
+      break
+    }
+  }
+  
+  #Stops function if the tibble not found.
+  if (is.null(tibble_plot)) {
+    stop(paste("No tibble with class", class_type, "was found."))
+  }
+  
+  #Decides which function is used based on which class is called. 
+  if (class_type == "state") {
+    plot.state(tibble_plot, var_name)
+  } else if (class_type == "county") {
+    plot.county(tibble_plot, var_name)
+  } else {
+    stop(paste("Unsupported Class Type:", class_type))
+  }
+}
+
+
+#plot_by_class(MyEDUO1a_Tibble_Wrapped, "state")
 ```
+
+```{r}
+plot.state(MyEDUO1b_Tibble_Wrapped)
+```
+
+
 ### Putting it all together
 
