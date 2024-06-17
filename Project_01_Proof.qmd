@@ -99,12 +99,18 @@ NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
 County.Data
 NonCounty.Data
 ```
+
+
+
+
   
 ### Combining Data Functions
 
+Instead of running each individual code chunk, we could create a function 
+
 ```{r}
 # First Function performs steps 1 and 2 in earlier example. 
-MyFunct0102 <- function(dataset_select_pivot) {
+MyFunct0102 <- function(dataset_select_pivot, Enrollment_Values = Enrollment_Values) {
   dataset_select_pivot %>%
       select("area_name" = Area_name, STCOU, ends_with("D")) %>%
       pivot_longer(
@@ -124,18 +130,15 @@ MyFunct03 <- function(dataset_mutate) {
 }
 
 
-# Third Function that performs steps 4,5,6 in the earlier example.
-MyFunct040506 <- function(dataset_partition) {
-#4
-County.Data <- dataset_partition |> filter(grepl(", [A-Z][A-Z]", area_name))
-NonCounty.Data <- dataset_partition |> filter(!grepl(", [A-Z][A-Z]", area_name))
+##Step 5--Add state abbreviations to County Data
+MyFunct05 <- function(County_Data_Mutate){
+  County_Data <- County_Data_Mutate |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
+}
 
-class(County.Data) <- c("county", class(County.Data))
-class(NonCounty.Data) <- c("state", class(NonCounty.Data))
-#5 
-County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
-#6
-NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
+
+#Step 6--Add Divisional descriptors to the NonCounty Data
+MyFunct06 <- function(NonCounty_Data_Mutate){
+  NonCounty_Data <- NonCounty_Data_Mutate |> mutate(division = case_when(
     area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
     area_name %in% c("NEW JERSEY","NEW YORK","PENNSYLVANIA") ~ "Midwest",
     area_name %in% c("ILLINOIS","INDIANA","MICHIGAN","OHIO","WISCONSIN") ~ "East North Central",
@@ -145,32 +148,61 @@ NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
     area_name %in% c("ARKANSAS","LOUISIANA","OKLAHOMA","TEXAS") ~ "West South Central",
     area_name %in% c("ARIZONA","COLORADO","IDAHO","MONTANA","NEVADA","NEW MEXICO","UTAH","WYOMING") ~ "Mountain",
     area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
-    TRUE ~ "ERROR"
-))
-return(list(County.Data,NonCounty.Data))
+    TRUE ~ "ERROR"))
 }
 
 
-#FINAL FUNCTION
-Split_Data_Along_Geography <- function(url, default_var_name = "https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv") {
+# Third Function that performs steps 4 in the earlier example.  This one also calls MyFunct05 and MyFunct06
+#MyFunct04 <- function(dataset_partition) {
+MyFunct04 <- function(dataset_partition) {  
+
+  #Step 4--Seperate the data into its two parts--County and NonCounty
+  County_Data <- dataset_partition |> filter(grepl(", [A-Z][A-Z]", area_name))
+  NonCounty_Data <- dataset_partition |> filter(!grepl(", [A-Z][A-Z]", area_name))
+  
+  #Function Call for CountyData
+  County_Data <- MyFunct05(County_Data)
+  class(County_Data) <- c("county", class(County_Data))
+  #Function Call for NonCountyData
+  NonCounty_Data <- MyFunct06(NonCounty_Data)
+  class(NonCounty_Data) <- c("state", class(NonCounty_Data))
+  
+  return(list(County_Data = County_Data, NonCounty_Data = NonCounty_Data))
+}
+
+
+#The Wrapper Function
+Split_Data_Along_Geography <- function(url, Enrollment_Value = "Enrollment_Value") {
   if (!str_ends(url, ".csv")) {
-    stop("Invalid URL format. Please provide a valid URL ending in '.csv")
+    stop("Invalid URL format. Please provide a valid URL ending in '.csv") #Check satisfying conditions for running the function. 
   }
-  result <- as.tibble(read_csv(url)) %>% 
-    MyFunct0102 %>%
-    MyFunct03 %>%
-    MyFunct040506
+  result <- as_tibble(read_csv(url)) %>% #Reads in data.
+    MyFunct0102 %>% #Selects/Pivots Data
+    MyFunct03 %>% #Creates new columns for measuring and date=year
+    MyFunct04 #Performs the split, mutate and class call on the dataset
   print(result)
 }
+```
 
-MyEDUO1a_02 <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
-MyEDUO1b_02 <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv")
 
-Reconstituted_MyEDU01a <- dplyr::bind_rows(MyEDUO1a_02)
-Reconstituted_MyEDU01b <- dplyr::bind_rows(MyEDUO1b_02)
+```{r}
+# Call it and Combine your Data
+MyEDUO1a_Tibble_Wrapped <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", Enrollment_Value)
+MyEDUO1b_Tibble_Wrapped <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", Enrollment_Value)
+```
 
+
+```{r}
+
+combine_results <- function(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped) {
+  combined_county <- dplyr::bind_rows(MyEDUO1a_Tibble_Wrapped$County_Data, MyEDUO1b_Tibble_Wrapped$County_Data)
+  combined_NonCounty <- dplyr::bind_rows(MyEDUO1a_Tibble_Wrapped$NonCounty_Data, MyEDUO1b_Tibble_Wrapped$NonCounty_Data)
+  return(list(combined_county,combined_NonCounty))}
+
+combine_results(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped)
 
 ```
+
 
 ### Generic Functions
 ```{r}
