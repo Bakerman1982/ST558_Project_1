@@ -17,15 +17,14 @@ Using data from the Census Bureau's Statistical Compendia Program, we can massag
 
 We cannot do anything without a dataset.  The first order of business is to introduce data to the R environment.  The readr package can read in our comma-separated value file and insert it as a tibble using the read_csv.  Since we will be working with two similarly-named URLs and datasets, I decided to name the tibble after the file name for organizational purpose.  In the next step, I would change the tibble name using best practices.
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 #Read-in the dataset.
 EDU01a <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
-EDU01a
 ```
 
 With the data read in, I called on it in R to show how the tibble was structured.  Observe there are 3,198 row over 42 columns of double-character mixed data.  Not all of the columns are useful.  The next tidyverse column operation will be to limit to an object the columns that we are interested in.  Inside the select operation, there is a renaming of column "Area_name" and call to pull all columns ending in "D" using the ends_with operation.     
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 #1
 #Select specific columns of interest from the dataset.
 My_EDU01a <- EDU01a |>
@@ -35,7 +34,7 @@ My_EDU01a
 
 This looks better but it is still difficult to read and work with.  I want to collapse all columns ending in "D" into one column called "Item_ID".  We can better manage the tibble with the results of this collapse.  
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 #2
 #Convert the section to long formatting. 
 My_EDU01a <- My_EDU01a |>
@@ -49,7 +48,7 @@ My_EDU01a
 Each value in the Item_ID column holds two pieces of information--a measurement type and a year.  The first 7 characters corresponds to the measurement type while the last to numerical values represent the year for the measurement.  The measure was straight-forward with a substr call to extract the first 7 characters of the Item_ID column.  We want our year in a four-number format but the dates overlapped with the new century.  This required a case_when approach of making sure all dates that were between 1980 and 1999 inclusive were fit with a "19" prefix; meanwhile, any numbers from 2000 to 2011 inclusive were fit with a "20" prefix.  I used some boolean operations to achieve this by look at the date and assigning it the appropriate prefix. Two new columns were created to show the result of both substr calls in the mutate column operation.
 
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 #3
 #Parse Strings into numeric, survey, and measurement types.  
 My_EDU01a <- My_EDU01a |>
@@ -62,7 +61,7 @@ My_EDU01a <- My_EDU01a |>
 Our data can be broken out into two buckets; observations that are county and those that are non-county.  I used the filter operation to check each row and assign observations into one of two partitions depending on area_name formating.  I added a column for class that we will use later in the visualization section.
 
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 # 4 From the parameterized version of the EDU table, I have separated out the two tables by county and non-county. 
 County.Data <- My_EDU01a |> filter(grepl(", [A-Z][A-Z]", area_name))
 NonCounty.Data <- My_EDU01a |> filter(!grepl(", [A-Z][A-Z]", area_name))
@@ -77,7 +76,7 @@ NonCounty.Data
 
 The final two steps involve adding a column specific to each tibble.  For the tibble capturing county data, I have added a mutate operation which checks the area_name column and extracts the last two letters to the new column.  The tibble for state was much more complicated.  There exists many divisions that make up areas by state.  I approached this using the case_when operation.  Rows belonging to particular states where funneled into their appropriate divisions.  If the area name did not contain the name of the state the new column value would be assigned "Error".  
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 # Create column in the County dataset that returns State
 County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
 
@@ -106,7 +105,7 @@ NonCounty.Data
 
 Instead of running each individual code chunk, we could create a function 
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 # First Function performs steps 1 and 2 in earlier example. 
 MyFunct0102 <- function(dataset_select_pivot, Enrollment_Values = Enrollment_Values) {
   dataset_select_pivot %>%
@@ -182,14 +181,14 @@ Split_Data_Along_Geography <- function(url, Enrollment_Value = "Enrollment_Value
 ```
 
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 # Call it and Combine your Data.  Testing to see if the URLs produce the intended outcome so far. 
 result_a <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", Enrollment_Value)
 result_b <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", Enrollment_Value)
 ```
 
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 # This function automates the step above, taking two URLs and producing a list of combined Tibbles seperated by County and NonCounty. 
 combine_results <- function(result_a, result_b) {
   combined_county <- dplyr::bind_rows(result_a$County_Data, result_b$County_Data)
@@ -204,7 +203,7 @@ Frames_Joined_On_Geo <- combine_results(result_a, result_b)
 
 # Generic Functions
 
-```{r}
+```{r, echo=TRUE, output=FALSE}
 #Plotting for our state data
 plot.state <- function(df.state, var_name = "Enrollment_Value") {
   # Filter out rows where Division is "ERROR" and compute mean enrollment of the input var_name, all by division and year.
@@ -222,7 +221,7 @@ plot.state <- function(df.state, var_name = "Enrollment_Value") {
     }
 ```
 
-```{r}
+```{r, eval=FALSE, echo=TRUE}
 #Plotting for our county data
 plot.county <- function(df.county, state="AK", top_or_bottom = "top", top_bottom_count = 5, var_name = "Enrollment_Value") {
   #Input assessment to make sure all values are in proper formatting
@@ -378,19 +377,19 @@ plot.state(joined_results[[2]])
 ```
  
 Use the plot function on the county data frame
-```{r}
+```{r, eval=FALSE, echo=TRUE}
 #Once specifying the state to be “NC”, the group being the top, the number looked at being 20
 plot.county(joined_results[[1]],state="NC", top_or_bottom = "top", top_bottom_count = 20, var_name = "Enrollment_Value")
 ```
-```{r}
+```{r, eval=FALSE, echo=TRUE}
 #Once specifying the state to be “SC”, the group being the bottom, the number looked at being 7
 plot.county(joined_results[[1]],state="SC", top_or_bottom = "bottom", top_bottom_count = 7, var_name = "Enrollment_Value")
 ```
-```{r}
+```{r, eval=FALSE, echo=TRUE}
 #Once without specifying anything (defaults used)
 plot.county(joined_results[[1]])
 ```
-```{r}
+```{r, eval=FALSE, echo=TRUE}
 #Once specifying the state to be “PA”, the group being the top, the number looked at being 8
 plot.county(joined_results[[1]],state="PA", top_or_bottom = "top", top_bottom_count = 8, var_name = "Enrollment_Value")
 ```
@@ -409,24 +408,24 @@ Run your data combining function (probably three times) to put these into one ob
 ```
 
 Use the plot function on the state data frame
-```{r}
+```{r, eval=FALSE, echo=TRUE}
 plot.state([[2]])
 ```
 
 Use the plot function on the county data frame
-```{r}
+```{r, eval=FALSE, echo=TRUE}
 #Once specifying the state to be “CA”, the group being the top, the number looked at being 15
 plot.county(,state="CA", top_or_bottom = "top", top_bottom_count = 15, var_name = "Enrollment_Value")
 ```
-```{r}  
+```{r, eval=FALSE, echo=TRUE}
 #Once specifying the state to be “TX”, the group being the top, the number looked at being 4
 plot.county(,state="TX", top_or_bottom = "top", top_bottom_count = 4, var_name = "Enrollment_Value")
 ```
-```{r}  
+```{r, eval=FALSE, echo=TRUE}
 #Once without specifying anything (defaults used)
 plot.county()
 ```
-```{r}  
+```{r, eval=FALSE, echo=TRUE}
 #Once specifying the state to be “NY”, the group being the top, the number looked at being 1
 plot.county(,state="NY", top_or_bottom = "top", top_bottom_count = 1, var_name = "Enrollment_Value")
 ```
