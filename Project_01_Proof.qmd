@@ -57,7 +57,6 @@ My_EDU01a <- My_EDU01a |>
         substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
         substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
         measure = substr(Item_ID, 1, 7))
-My_EDU01a
 ```
 
 Our data can be broken out into two buckets; observations that are county and those that are non-county.  I used the filter operation to check each row and assign observations into one of two partitions depending on area_name formating.  I added a column for class that we will use later in the visualization section.
@@ -179,37 +178,25 @@ Split_Data_Along_Geography <- function(url, Enrollment_Value = "Enrollment_Value
     MyFunct0102 %>% #Selects/Pivots Data
     MyFunct03 %>% #Creates new columns for measuring and date=year
     MyFunct04 #Performs the split, mutate and class call on the dataset
-  #print(result)
 }
 ```
 
 
 ```{r}
 # Call it and Combine your Data.  Testing to see if the URLs produce the intended outcome so far. 
-MyEDUO1a_Tibble_Wrapped <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", Enrollment_Value)
-MyEDUO1b_Tibble_Wrapped <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", Enrollment_Value)
+result_a <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", Enrollment_Value)
+result_b <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", Enrollment_Value)
 ```
 
 
 ```{r}
 # This function automates the step above, taking two URLs and producing a list of combined Tibbles seperated by County and NonCounty. 
-combine_results <- function(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped) {
-  combined_county <- dplyr::bind_rows(MyEDUO1a_Tibble_Wrapped$County_Data, MyEDUO1b_Tibble_Wrapped$County_Data)
-  combined_NonCounty <- dplyr::bind_rows(MyEDUO1a_Tibble_Wrapped$NonCounty_Data, MyEDUO1b_Tibble_Wrapped$NonCounty_Data)
+combine_results <- function(result_a, result_b) {
+  combined_county <- dplyr::bind_rows(result_a$County_Data, result_b$County_Data)
+  combined_NonCounty <- dplyr::bind_rows(result_a$NonCounty_Data, result_b$NonCounty_Data)
   return(list(combined_county,combined_NonCounty))}
 
-combine_results(MyEDUO1a_Tibble_Wrapped, MyEDUO1b_Tibble_Wrapped)
-```
-```{r}
-combine_results <- function(url1, url2, Enrollment_Values = "Enrollment_Values"){
-  result1 <- Split_Data_Along_Geography(url1)
-  result2 <- Split_Data_Along_Geography(url2)
-  combined_county <- dplyr::bind_rows(result1$County_Data, result2$County_Data)
-  combined_NonCounty <- dplyr::bind_rows(result1$NonCounty_Data, result2$NonCounty_Data)
-  return(list(combined_county,combined_NonCounty))}
-
-#example
-combine_results("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv","https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv",Enrollment_Values)
+joined_data_x_URL <- combine_results(result_a, result_b)
 ```
 
 
@@ -231,18 +218,49 @@ plot.state <- function(df.state, var_name = "Enrollment_Value") {
     geom_point() +
     labs(x = "Year", y = "Mean Enrollment Values") + 
     ggtitle(paste("Mean", var_name, "across years by division"))
-  
-  }
+    }
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 plot.county <- function(df.county, state_abbrev="FL", Top_or_Bottom = "top", Top_Bottom_Count = 5, var_name = "Enrollment_Value") {
-      df_filtered <- df.county %>%
-        filter(state = state) %>%
-        
-      #group_by(division, year) %>%
-      summarize(mean_enrollment = mean(get(var_name), na.rm = TRUE))
+  #Input assessment to make sure all values are in proper formatting
+  
+  
+  #Filter data down to state from the input
+  
+  
+  #Find the mean of the statistic for all area_names
+  
+  
+  #Sort and top or bottom observations
+  
+  
+  #Count number of observations to be returned
+  
+  
+  #Combine all the requirements into this culminating step and return what the function was built to return.
+
 
 }
-MyEDUO1b_Tibble_Wrapped$County_Data
 
 
 # A decision wrapper function that takes the inputs data frame and the class needing plotted, and var_name and funnels the df through the appropriate class-based plotting function
@@ -288,39 +306,138 @@ plot.state(MyEDUO1b_Tibble_Wrapped)
 
 ### Putting it all together
 
+Run your data processing function on the two enrollment URLs given previously, specifying an appropriate name for the enrollment data column.
 ```{r}
-analyze_state_data <- function(data, state = "California", var_name, top_or_bottom = "top", n = 5) {
-  # Ensure the inputs are correctly formatted
-  state <- as.character(state)
-  var_name <- as.character(var_name)
-  top_or_bottom <- match.arg(top_or_bottom, choices = c("top", "bottom"))
-  n <- as.integer(n)
-  
-  # 1. Filter the data to only include the specified state
-  state_data <- subset(data, State == state)
-  
-  # 2. Find the mean of the statistic for each Area_name
-  means_by_area <- aggregate(get(var_name) ~ Area_name, data = state_data, FUN = mean)
-  colnames(means_by_area)[2] <- "mean_stat"  # Rename the second column to "mean_stat"
-  
-  # 3. Sort values according to the top or bottom specification
-  if (top_or_bottom == "top") {
-    sorted_means <- means_by_area[order(-means_by_area$mean_stat), ]
-  } else {
-    sorted_means <- means_by_area[order(means_by_area$mean_stat), ]
-  }
-  
-  # 4. Obtain the top or bottom x number of Area_names
-  top_bottom_areas <- head(sorted_means, n)
-  
-  # 5. Filter the state data to only include these top or bottom Area_names
-  filtered_data <- subset(state_data, Area_name %in% top_bottom_areas$Area_name)
-  
-  return(filtered_data)
-}
+#READ: EDU01a.csv file.
+EDU01a <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
 
-# Example usage:
-# Suppose `data` is your data frame and 'statistic_column' is the column name of the statistic you are interested in.
-# filtered_data <- analyze_state_data(data, state = "New York", var_name = "statistic_column", top_or_bottom = "bottom", n = 10)
+#Combine Step one, step two and step three into one task.
+My_EDU01a <- EDU01a |>
+  select("area_name" = Area_name, STCOU, ends_with("D")) |>
+  pivot_longer(
+    cols = ends_with("D"),
+    names_to = "Item_ID",
+    values_to = "Enrollment_Value") |> #Specification of the enrollment values data column
+  mutate(year = case_when(
+    substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
+    substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
+    measure = substr(Item_ID, 1, 7))
 
+#Assigned data based on area_name column values.
+County.Data <- My_EDU01a |> filter(grepl(", [A-Z][A-Z]", area_name))
+NonCounty.Data <- My_EDU01a |> filter(!grepl(", [A-Z][A-Z]", area_name))
+
+#Add a column that identifies the classification of data we are working with. 
+class(County.Data) <- c("county", class(County.Data))
+class(NonCounty.Data) <- c("state", class(NonCounty.Data))
+
+#Create column with state abbreviation
+County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
+
+#Create column in the NonCounty dataset that returns division conditionally  
+NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
+  area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
+  area_name %in% c("NEW JERSEY","NEW YORK","PENNSYLVANIA") ~ "Midwest",
+  area_name %in% c("ILLINOIS","INDIANA","MICHIGAN","OHIO","WISCONSIN") ~ "East North Central",
+  area_name %in% c("IOWA","KANSAS","MINNESOTA","MISSOURI","NEBRASKA","NORTH DAKOTA","SOUTH DAKOTA") ~ "West North Central",
+  area_name %in% c("DELAWARE","FLORIDA","GEORGIA","MARYLAND","NORTH CAROLINA","SOUTH CAROLINA","VIRGINIA","WASHINGTON, D.C.","WEST VIRGINIA") ~ "South Atlantic",
+  area_name %in% c("ALABAMA","KENTUCKY","MISSISSIPPI","TENNESSEE") ~ "East South Central",
+  area_name %in% c("ARKANSAS","LOUISIANA","OKLAHOMA","TEXAS") ~ "West South Central",
+  area_name %in% c("ARIZONA","COLORADO","IDAHO","MONTANA","NEVADA","NEW MEXICO","UTAH","WYOMING") ~ "Mountain",
+  area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
+  TRUE ~ "ERROR"
+))
 ```
+
+
+```{r}
+#READ: EDU01b.csv file.
+EDU01b <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv")
+
+#Combine Step one, step two and step three into one task.
+My_EDU01b <- EDU01b |>
+  select("area_name" = Area_name, STCOU, ends_with("D")) |>
+  pivot_longer(
+    cols = ends_with("D"),
+    names_to = "Item_ID",
+    values_to = "Enrollment_Value") |> #Specification of the enrollment values data column
+  mutate(year = case_when(
+    substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
+    substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
+    measure = substr(Item_ID, 1, 7))
+
+#Assigned data based on area_name column values.
+County.Data <- My_EDU01b |> filter(grepl(", [A-Z][A-Z]", area_name))
+NonCounty.Data <- My_EDU01b |> filter(!grepl(", [A-Z][A-Z]", area_name))
+
+#Add a column that identifies the classification of data we are working with. 
+class(County.Data) <- c("county", class(County.Data))
+class(NonCounty.Data) <- c("state", class(NonCounty.Data))
+
+#Create column with state abbreviation
+County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
+
+#Create column in the NonCounty dataset that returns division conditionally  
+NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
+  area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
+  area_name %in% c("NEW JERSEY","NEW YORK","PENNSYLVANIA") ~ "Midwest",
+  area_name %in% c("ILLINOIS","INDIANA","MICHIGAN","OHIO","WISCONSIN") ~ "East North Central",
+  area_name %in% c("IOWA","KANSAS","MINNESOTA","MISSOURI","NEBRASKA","NORTH DAKOTA","SOUTH DAKOTA") ~ "West North Central",
+  area_name %in% c("DELAWARE","FLORIDA","GEORGIA","MARYLAND","NORTH CAROLINA","SOUTH CAROLINA","VIRGINIA","WASHINGTON, D.C.","WEST VIRGINIA") ~ "South Atlantic",
+  area_name %in% c("ALABAMA","KENTUCKY","MISSISSIPPI","TENNESSEE") ~ "East South Central",
+  area_name %in% c("ARKANSAS","LOUISIANA","OKLAHOMA","TEXAS") ~ "West South Central",
+  area_name %in% c("ARIZONA","COLORADO","IDAHO","MONTANA","NEVADA","NEW MEXICO","UTAH","WYOMING") ~ "Mountain",
+  area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
+  TRUE ~ "ERROR"
+))
+```
+
+Run your data combining function to put these into one object (with two data frames)
+```{r}
+#Enter URL and variable input into function to assign an object in the environment.
+result_a <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", Enrollment_Value)
+result_b <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", Enrollment_Value)
+
+#Combine the resulting lists containing two tibbles such that state combines with state and county combines with county.
+joined_results <- combine_results(result_a,result_b)
+```
+
+Use the plot function on the state data frame
+```{r}
+plot.state(joined_results[[2]])
+```
+ 
+Use the plot function on the county data frame
+  - Once specifying the state to be “NC”, the group being the top, the number looked at being 20
+  – Once specifying the state to be “SC”, the group being the bottom, the number looked at being 7
+  – Once without specifying anything (defaults used)
+  – Once specifying the state to be “PA”, the group being the top, the number looked at being 8
+```{r}
+```  
+  
+Lastly, read in another couple similar data sets and apply your functions! Run your data processing function on the four data sets at URLs given below:
+ – https://www4.stat.ncsu.edu/~online/datasets/PST01a.csv
+ – https://www4.stat.ncsu.edu/~online/datasets/PST01b.csv
+ – https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv
+ – https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv
+```{r}
+``` 
+ 
+Run your data combining function (probably three times) to put these into one object (with two data frames)
+```{r}
+```
+
+Use the plot function on the state data frame
+```{r}
+```
+
+Use the plot function on the county data frame
+  – Once specifying the state to be “CA”, the group being the top, the number looked at being 15
+  – Once specifying the state to be “TX”, the group being the top, the number looked at being 4
+  – Once without specifying anything (defaults used)
+  – Once specifying the state to be “NY”, the group being the top, the number looked at being 1
+```{r}
+```
+
+
+
