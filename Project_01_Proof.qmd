@@ -196,7 +196,7 @@ combine_results <- function(result_a, result_b) {
   combined_NonCounty <- dplyr::bind_rows(result_a$NonCounty_Data, result_b$NonCounty_Data)
   return(list(combined_county,combined_NonCounty))}
 
-joined_data_x_URL <- combine_results(result_a, result_b)
+Frames_Joined_On_Geo <- combine_results(result_a, result_b)
 ```
 
 
@@ -205,6 +205,7 @@ joined_data_x_URL <- combine_results(result_a, result_b)
 # Generic Functions
 
 ```{r}
+#Plotting for our state data
 plot.state <- function(df.state, var_name = "Enrollment_Value") {
   # Filter out rows where Division is "ERROR" and compute mean enrollment of the input var_name, all by division and year.
   df_filtered <- df.state %>%
@@ -221,88 +222,51 @@ plot.state <- function(df.state, var_name = "Enrollment_Value") {
     }
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-plot.county <- function(df.county, state_abbrev="FL", Top_or_Bottom = "top", Top_Bottom_Count = 5, var_name = "Enrollment_Value") {
+```{r}
+#Plotting for our county data
+plot.county <- function(df.county, state="AK", top_or_bottom = "top", top_bottom_count = 5, var_name = "Enrollment_Value") {
   #Input assessment to make sure all values are in proper formatting
-  
+  state <- as.character(state)
+  #var_name <- as.character(var_name)
+  top_or_bottom <- match.arg(top_or_bottom, choices = c("top", "bottom"))
+  n <- as.integer(top_bottom_count)
   
   #Filter data down to state from the input
-  
-  
+  state_data <- subset(df.county, state == state)
+
   #Find the mean of the statistic for all area_names
-  
+  means_by_area <- aggregate(get(var_name) ~ area_name, df.county = state_data, FUN = mean)
+  colnames(means_by_area)[2] <- "mean_stat"
   
   #Sort and top or bottom observations
-  
+  if (top_or_bottom == "top") {
+    sorted_means <- means_by_area[order(-means_by_area$mean_stat), ]
+  } else {
+    sorted_means <- means_by_area[order(means_by_area$mean_stat), ]
+  }
   
   #Count number of observations to be returned
-  
+  top_bottom_areas <- head(sorted_means, n)
   
   #Combine all the requirements into this culminating step and return what the function was built to return.
-
-
+  filtered_data <- subset(state_data, area_name %in% top_bottom_areas$area_name)
+  
+  return(filtered_data) #Delete this and funnel the return into a ggplot call
+  
+    # Plot the input
+  #ggplot(df_filtered, aes(x = year, y = mean_enrollment, color = division))+
+  #  geom_line(aes(group = division)) +
+  #  geom_point() +
+  #  labs(x = "Year", y = "Mean Enrollment Values") + 
+  #  ggtitle(paste("Mean", var_name, "across years by division"))
+  #  
+  
+  
 }
 
+plot.county(Frames_Joined_On_Geo[[1]], state = "FL", top_or_bottom = "top", top_bottom_count = 6, var_name = "Enrollment_Value")
 
-# A decision wrapper function that takes the inputs data frame and the class needing plotted, and var_name and funnels the df through the appropriate class-based plotting function
-
-plot_by_class <- function(df, class_type, var_name = "Enrollment_Value"){
-  #Stops function to abruptly stop the plot_by_class function if the df is not a list of tibbles
-  if(!is.list(df)){
-    stop("Input 'df' should be a list of tibbles.")
-  }
-  
-  #Checks list of tibbles and depending on class_type called identifies and assigns the tibble to variable tibble_plot which will be used later in the wrapper function to plot.
-  tibble_plot <- NULL
-  for (item in df){
-    if (inherits(item,class_type)) {
-      tibble_plot <- item
-      break
-    }
-  }
-  
-  #Stops function if the tibble not found.
-  if (is.null(tibble_plot)) {
-    stop(paste("No tibble with class", class_type, "was found."))
-  }
-  
-  #Decides which function is used based on which class is called. 
-  if (class_type == "state") {
-    plot.state(tibble_plot, var_name)
-  } else if (class_type == "county") {
-    plot.county(tibble_plot, var_name)
-  } else {
-    stop(paste("Unsupported Class Type:", class_type))
-  }
-}
-
-
-#plot_by_class(MyEDUO1a_Tibble_Wrapped, "state")
 ```
-
-```{r}
-plot.state(MyEDUO1b_Tibble_Wrapped)
-```
-
 
 ### Putting it all together
 
@@ -347,6 +311,8 @@ NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
   area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
   TRUE ~ "ERROR"
 ))
+County.Data
+NonCounty.Data
 ```
 
 
@@ -390,6 +356,8 @@ NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
   area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
   TRUE ~ "ERROR"
 ))
+County.Data
+NonCounty.Data
 ```
 
 Run your data combining function to put these into one object (with two data frames)
@@ -399,22 +367,35 @@ result_a <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datas
 result_b <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", Enrollment_Value)
 
 #Combine the resulting lists containing two tibbles such that state combines with state and county combines with county.
-joined_results <- combine_results(result_a,result_b)
+joined_results <- combine_results(result_a, result_b)
+joined_results
 ```
 
 Use the plot function on the state data frame
 ```{r}
+#Plot state from joined_results list element 2 (the state tibble)
 plot.state(joined_results[[2]])
 ```
  
 Use the plot function on the county data frame
-  - Once specifying the state to be “NC”, the group being the top, the number looked at being 20
-  – Once specifying the state to be “SC”, the group being the bottom, the number looked at being 7
-  – Once without specifying anything (defaults used)
-  – Once specifying the state to be “PA”, the group being the top, the number looked at being 8
 ```{r}
-```  
-  
+#Once specifying the state to be “NC”, the group being the top, the number looked at being 20
+plot.county(joined_results[[1]],state="NC", top_or_bottom = "top", top_bottom_count = 20, var_name = "Enrollment_Value")
+```
+```{r}
+#Once specifying the state to be “SC”, the group being the bottom, the number looked at being 7
+plot.county(joined_results[[1]],state="SC", top_or_bottom = "bottom", top_bottom_count = 7, var_name = "Enrollment_Value")
+```
+```{r}
+#Once without specifying anything (defaults used)
+plot.county(joined_results[[1]])
+```
+```{r}
+#Once specifying the state to be “PA”, the group being the top, the number looked at being 8
+plot.county(joined_results[[1]],state="PA", top_or_bottom = "top", top_bottom_count = 8, var_name = "Enrollment_Value")
+```
+
+
 Lastly, read in another couple similar data sets and apply your functions! Run your data processing function on the four data sets at URLs given below:
  – https://www4.stat.ncsu.edu/~online/datasets/PST01a.csv
  – https://www4.stat.ncsu.edu/~online/datasets/PST01b.csv
@@ -429,15 +410,23 @@ Run your data combining function (probably three times) to put these into one ob
 
 Use the plot function on the state data frame
 ```{r}
+plot.state([[2]])
 ```
 
 Use the plot function on the county data frame
-  – Once specifying the state to be “CA”, the group being the top, the number looked at being 15
-  – Once specifying the state to be “TX”, the group being the top, the number looked at being 4
-  – Once without specifying anything (defaults used)
-  – Once specifying the state to be “NY”, the group being the top, the number looked at being 1
 ```{r}
+#Once specifying the state to be “CA”, the group being the top, the number looked at being 15
+plot.county(,state="CA", top_or_bottom = "top", top_bottom_count = 15, var_name = "Enrollment_Value")
 ```
-
-
-
+```{r}  
+#Once specifying the state to be “TX”, the group being the top, the number looked at being 4
+plot.county(,state="TX", top_or_bottom = "top", top_bottom_count = 4, var_name = "Enrollment_Value")
+```
+```{r}  
+#Once without specifying anything (defaults used)
+plot.county()
+```
+```{r}  
+#Once specifying the state to be “NY”, the group being the top, the number looked at being 1
+plot.county(,state="NY", top_or_bottom = "top", top_bottom_count = 1, var_name = "Enrollment_Value")
+```
