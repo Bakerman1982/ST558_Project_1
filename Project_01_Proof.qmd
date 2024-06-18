@@ -217,42 +217,59 @@ plot.state <- function(df.state, var_name = "Enrollment_Value") {
     geom_line(aes(group = division)) +
     geom_point() +
     labs(x = "Year", y = "Mean Enrollment Values") + 
-    ggtitle(paste("Mean", var_name, "across years by division"))
-    }
+    ggtitle(paste("Mean", var_name, "across years by division")) +
+    theme(axis.text.x = element_text(angle = 90))
+  }
+plot.state(Frames_Joined_On_Geo[[2]], "Enrollment_Value")
 ```
 
 ```{r, eval=FALSE, echo=TRUE}
 #Plotting for our county data
-plot.county <- function(df.county, state="AK", top_or_bottom = "top", top_bottom_count = 5, var_name = "Enrollment_Value") {
-  #Input assessment to make sure all values are in proper formatting
-  state <- as.character(state)
-  #var_name <- as.character(var_name)
-  top_or_bottom <- match.arg(top_or_bottom, choices = c("top", "bottom"))
-  n <- as.integer(top_bottom_count)
-  
-  #Filter data down to state from the input
-  state_data <- subset(df.county, state == state)
 
-  #Find the mean of the statistic for all area_names
-  means_by_area <- aggregate(get(var_name) ~ area_name, df.county = state_data, FUN = mean)
-  colnames(means_by_area)[2] <- "mean_stat"
+plot.county <- function(data, state = "FL", top_or_bottom = "top", n = 5, var_name) {
   
-  #Sort and top or bottom observations
-  if (top_or_bottom == "top") {
-    sorted_means <- means_by_area[order(-means_by_area$mean_stat), ]
-  } else {
-    sorted_means <- means_by_area[order(means_by_area$mean_stat), ]
+  # Ensure the input for top_or_bottom is valid
+  if(!top_or_bottom %in% c("top", "bottom")) {
+    stop("Invalid value for 'top_or_bottom'. Must be 'top' or 'bottom'.")
   }
   
-  #Count number of observations to be returned
-  top_bottom_areas <- head(sorted_means, n)
+  # Filter data for the specified state
+  state_data <- data %>%
+    filter(state == state)
   
-  #Combine all the requirements into this culminating step and return what the function was built to return.
-  filtered_data <- subset(state_data, area_name %in% top_bottom_areas$area_name)
+  # Calculate the mean of the specified variable for each Area_name
+  mean_values <- state_data %>%
+    group_by(area_name) %>%
+    summarise(mean_value = mean(get(var_name), na.rm = TRUE)) %>%
+    ungroup()
   
-  return(filtered_data) #Delete this and funnel the return into a ggplot call
+  # Sort the Area_names based on the mean values
+  if(top_or_bottom == "top") {
+    sorted_values <- mean_values %>%
+      arrange(desc(mean_value))
+  } else {
+    sorted_values <- mean_values %>%
+      arrange(mean_value)
+  }
   
-    # Plot the input
+  # Get the top or bottom n Area_names
+  selected_area_names <- sorted_values %>%
+    slice(1:n) %>%
+    pull(area_name)
+  
+  # Filter the original data for these Area_names
+  final_data <- state_data %>%
+    filter(area_name %in% selected_area_names)
+  
+  return(final_data)
+}
+
+plot.county(Frames_Joined_On_Geo[[1]], state = "FL", top_or_bottom = "top", n = 1, var_name = "Enrollment_Value")
+
+
+
+  
+# Plot the input that will go into the plot.county function once it is running.
   #ggplot(df_filtered, aes(x = year, y = mean_enrollment, color = division))+
   #  geom_line(aes(group = division)) +
   #  geom_point() +
@@ -260,14 +277,9 @@ plot.county <- function(df.county, state="AK", top_or_bottom = "top", top_bottom
   #  ggtitle(paste("Mean", var_name, "across years by division"))
   #  
   
-  
-}
-
-plot.county(Frames_Joined_On_Geo[[1]], state = "FL", top_or_bottom = "top", top_bottom_count = 6, var_name = "Enrollment_Value")
-
 ```
 
-### Putting it all together
+# Putting it all together
 
 Run your data processing function on the two enrollment URLs given previously, specifying an appropriate name for the enrollment data column.
 ```{r}
