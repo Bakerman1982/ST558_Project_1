@@ -188,13 +188,21 @@ result_b <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datas
 
 
 ```{r, echo=TRUE, output=FALSE}
-# This function automates the step above, taking two URLs and producing a list of combined Tibbles seperated by County and NonCounty. 
-combine_results <- function(result_a, result_b) {
-  combined_county <- dplyr::bind_rows(result_a$County_Data, result_b$County_Data)
-  combined_NonCounty <- dplyr::bind_rows(result_a$NonCounty_Data, result_b$NonCounty_Data)
-  return(list(combined_county,combined_NonCounty))}
+# This function automates the step above, taking the results of two or more URLs and producing a list of combined Tibbles seperated by County and NonCounty. 
 
-Frames_Joined_On_Geo <- combine_results(result_a, result_b)
+combine_results <- function(...) {
+  results <- list(...)
+  
+  combined_county <- results %>%
+    purrr::map(~ .x$County_Data) %>%
+    purrr::reduce(dplyr::bind_rows)
+  
+  combined_NonCounty <- results %>%
+    purrr::map(~ .x$NonCounty_Data) %>%
+    purrr::reduce(dplyr::bind_rows)
+  
+  return(list(combined_county, combined_NonCounty))
+}
 ```
 
 
@@ -219,22 +227,19 @@ plot.state <- function(df.state, var_name = "Enrollment_Value") {
     ggtitle(paste("Mean", var_name, "across years by division")) +
     theme(axis.text.x = element_text(angle = 90))
   }
-plot.state(Frames_Joined_On_Geo[[2]], "Enrollment_Value")
 ```
 
 ```{r, eval=TRUE, echo=TRUE}
-plot.county <- function(data, state = "TX", var_name = "Enrollment_Value", top_or_bottom = "top", n = 5) {
+plot.county <- function(data, state = "NC", var_name = "Enrollment_Value", top_or_bottom = "top", n = 5) {
 
   # Filter the data to only include data from the specified state
   state_data <- data %>% filter(state == !!state)
 
-  
   # Calculate the overall mean of the specified statistic for each area_name
   mean_data <- state_data %>%
     group_by(area_name) %>%
     summarise(mean_value = mean(get(var_name), na.rm = TRUE))
 
-  
   # Sort the mean values from largest to smallest if 'top' is specified, or smallest to largest if 'bottom' is specified
   if (top_or_bottom == "top") {
     sorted_data <- mean_data %>% arrange(desc(mean_value))
@@ -242,25 +247,22 @@ plot.county <- function(data, state = "TX", var_name = "Enrollment_Value", top_o
     sorted_data <- mean_data %>% arrange(mean_value)
   }
 
-
   ## Obtain the top or bottom n area_names
   selected_areas <- sorted_data %>% slice_head(n = n) %>% pull(area_name)
-
-
 
   # Filter the original data to only include the selected area_names
   plot_data <- state_data %>% filter(area_name %in% selected_areas)
 
-
   ggplot(plot_data, aes(x = year, y = get(var_name), color = area_name)) +
-    geom_line() +
+    geom_line(aes(group = area_name)) +
     geom_point() +
     labs(x = "Year", y = "Mean Enrollment Values") + 
     ggtitle(paste(var_name, "across years by county")) +
+    scale_y_continuous(labels = scales::comma) +
     theme(axis.text.x = element_text(angle = 90))
   }
 
-plot.county(Frames_Joined_On_Geo[[1]], state = "FL", var_name = "Enrollment_Value", top_or_bottom = "bottom", n = 5)
+#plot.county(Frames_Joined_On_Geo[[1]], state = "FL", var_name = "Enrollment_Value", top_or_bottom = "top", n = 9)
 ```
 
 # Putting it all together
@@ -367,27 +369,30 @@ joined_results
 ```
 
 Use the plot function on the state data frame
-```{r}
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
 #Plot state from joined_results list element 2 (the state tibble)
 plot.state(joined_results[[2]])
 ```
- 
+
 Use the plot function on the county data frame
-```{r, eval=FALSE, echo=TRUE}
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
 #Once specifying the state to be “NC”, the group being the top, the number looked at being 20
-plot.county(joined_results[[1]],state="NC", top_or_bottom = "top", top_bottom_count = 20, var_name = "Enrollment_Value")
+plot.county(joined_results[[1]],state="NC", top_or_bottom = "top", n = 20, var_name = "Enrollment_Value")
 ```
-```{r, eval=FALSE, echo=TRUE}
+
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
 #Once specifying the state to be “SC”, the group being the bottom, the number looked at being 7
-plot.county(joined_results[[1]],state="SC", top_or_bottom = "bottom", top_bottom_count = 7, var_name = "Enrollment_Value")
+plot.county(joined_results[[1]],state="SC", top_or_bottom = "bottom", n = 7, var_name = "Enrollment_Value")
 ```
-```{r, eval=FALSE, echo=TRUE}
+
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
 #Once without specifying anything (defaults used)
 plot.county(joined_results[[1]])
 ```
-```{r, eval=FALSE, echo=TRUE}
+
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
 #Once specifying the state to be “PA”, the group being the top, the number looked at being 8
-plot.county(joined_results[[1]],state="PA", top_or_bottom = "top", top_bottom_count = 8, var_name = "Enrollment_Value")
+plot.county(joined_results[[1]],state="PA", top_or_bottom = "top", n = 8, var_name = "Enrollment_Value")
 ```
 
 
@@ -396,34 +401,39 @@ Lastly, read in another couple similar data sets and apply your functions! Run y
  – https://www4.stat.ncsu.edu/~online/datasets/PST01b.csv
  – https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv
  – https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv
-```{r}
-##DO NOT EVAL
+
+```{r, eval=TRUE, echo=TRUE}
+result_a <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/PST01a.csv", Enrollment_Value)
+result_b <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/PST01b.csv", Enrollment_Value)
+result_c <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv", Enrollment_Value)
+result_d <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv", Enrollment_Value)
 ``` 
  
 Run your data combining function (probably three times) to put these into one object (with two data frames)
-```{r}
-##DO NOT EVAL
+```{r, eval=TRUE, echo=TRUE}
+Four_Frames_Joined_On_Geo <- combine_results(result_a, result_b, result_c, result_d)
+Four_Frames_Joined_On_Geo
 ```
 
 Use the plot function on the state data frame
-```{r, eval=FALSE, echo=TRUE}
-plot.state([[2]])
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
+plot.state(Four_Frames_Joined_On_Geo[[2]])
 ```
 
 Use the plot function on the county data frame
-```{r, eval=FALSE, echo=TRUE}
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
 #Once specifying the state to be “CA”, the group being the top, the number looked at being 15
-plot.county(,state="CA", top_or_bottom = "top", top_bottom_count = 15, var_name = "Enrollment_Value")
+plot.county(Four_Frames_Joined_On_Geo[[1]],state = "CA", top_or_bottom = "top", n = 15, var_name = "Enrollment_Value")
 ```
-```{r, eval=FALSE, echo=TRUE}
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
 #Once specifying the state to be “TX”, the group being the top, the number looked at being 4
-plot.county(,state="TX", top_or_bottom = "top", top_bottom_count = 4, var_name = "Enrollment_Value")
+plot.county(Four_Frames_Joined_On_Geo[[1]],state = "TX", top_or_bottom = "top", n = 4, var_name = "Enrollment_Value")
 ```
-```{r, eval=FALSE, echo=TRUE}
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
 #Once without specifying anything (defaults used)
-plot.county()
+plot.county(Four_Frames_Joined_On_Geo[[1]])
 ```
-```{r, eval=FALSE, echo=TRUE}
+```{r, eval=TRUE, echo=TRUE, message=FALSE}
 #Once specifying the state to be “NY”, the group being the top, the number looked at being 1
-plot.county(,state="NY", top_or_bottom = "top", top_bottom_count = 1, var_name = "Enrollment_Value")
+plot.county(Four_Frames_Joined_On_Geo[[1]],state = "NY", top_or_bottom = "top", n = 1, var_name = "Enrollment_Value")
 ```
