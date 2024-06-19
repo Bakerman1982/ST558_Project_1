@@ -8,7 +8,7 @@
 
 <meta name="author" content="Brock Akerman">
 
-<title>Data Manipulation (EDIT TITLE)</title>
+<title>Data Manipulation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -80,7 +80,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Data Manipulation (EDIT TITLE)</h1>
+<h1 class="title">Data Manipulation</h1>
 </div>
 
 
@@ -105,7 +105,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(tidyverse)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">readr.show_col_types =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(rlang)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">readr.show_col_types =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Data wrangling can present varying degrees of challenges. If you are fortunate, issues present in the data your are working with may be corrected with a single line of Base R code in the console. Data is messy and the task to wrangle it will often require a script of code to prepare it for analysis.</p>
 <p>Using data from the Census Bureau’s Statistical Compendia Program, we can massage the data into a format we can work with for analysis using the tidyverse. In the following <em>Data Processing</em> section, the effort to accomplish this task will look manual with a step-by-step demonstration of turning raw data into two tibbles that groups our data geographically using simple tidyverse functions. In the <em>Combining Data Functions</em> section, I will demonstrate an automative approach through nested functions. This will allow for the replication of new datasets without having to recreate a new function each time we require the exact formatting using a similar dataset. Finally I will auto-plot the data in the <em>Putting it all together sections</em>.</p>
@@ -295,104 +296,101 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.state</span>(Frames_Joined_On_Geo[[<span class="dv">2</span>]], <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Plotting for our county data</span></span>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>plot.county <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">state =</span> <span class="st">"TX"</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">n =</span> <span class="dv">5</span>) {</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>plot.county <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">state =</span> <span class="st">"FL"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">n =</span> <span class="dv">5</span>, var_name) {</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Ensure the input for top_or_bottom is valid</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="sc">!</span>top_or_bottom <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"top"</span>, <span class="st">"bottom"</span>)) {</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Invalid value for 'top_or_bottom'. Must be 'top' or 'bottom'."</span>)</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter data for the specified state</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  state_data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(state <span class="sc">==</span> state)</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate the mean of the specified variable for each Area_name</span></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  mean_values <span class="ot">&lt;-</span> state_data <span class="sc">%&gt;%</span></span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(area_name) <span class="sc">%&gt;%</span></span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">mean_value =</span> <span class="fu">mean</span>(<span class="fu">get</span>(var_name), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>()</span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sort the Area_names based on the mean values</span></span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(top_or_bottom <span class="sc">==</span> <span class="st">"top"</span>) {</span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    sorted_values <span class="ot">&lt;-</span> mean_values <span class="sc">%&gt;%</span></span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">arrange</span>(<span class="fu">desc</span>(mean_value))</span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    sorted_values <span class="ot">&lt;-</span> mean_values <span class="sc">%&gt;%</span></span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>      <span class="fu">arrange</span>(mean_value)</span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Get the top or bottom n Area_names</span></span>
-<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>  selected_area_names <span class="ot">&lt;-</span> sorted_values <span class="sc">%&gt;%</span></span>
-<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span>n) <span class="sc">%&gt;%</span></span>
-<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pull</span>(area_name)</span>
-<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter the original data for these Area_names</span></span>
-<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>  final_data <span class="ot">&lt;-</span> state_data <span class="sc">%&gt;%</span></span>
-<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(area_name <span class="sc">%in%</span> selected_area_names)</span>
-<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(final_data)</span>
-<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(Frames_Joined_On_Geo[[<span class="dv">1</span>]], <span class="at">state =</span> <span class="st">"FL"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">n =</span> <span class="dv">1</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span>
-<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the input that will go into the plot.county function once it is running.</span></span>
-<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>  <span class="co">#ggplot(df_filtered, aes(x = year, y = mean_enrollment, color = division))+</span></span>
-<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  geom_line(aes(group = division)) +</span></span>
-<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  geom_point() +</span></span>
-<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  labs(x = "Year", y = "Mean Enrollment Values") + </span></span>
-<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  ggtitle(paste("Mean", var_name, "across years by division"))</span></span>
-<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter the data to only include data from the specified state</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  state_data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(state <span class="sc">==</span> <span class="sc">!!</span>state)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Calculate the overall mean of the specified statistic for each area_name</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  mean_data <span class="ot">&lt;-</span> state_data <span class="sc">%&gt;%</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(area_name) <span class="sc">%&gt;%</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">mean_value =</span> <span class="fu">mean</span>(<span class="fu">get</span>(var_name), <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Sort the mean values from largest to smallest if 'top' is specified, or smallest to largest if 'bottom' is specified</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (top_or_bottom <span class="sc">==</span> <span class="st">"top"</span>) {</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    sorted_data <span class="ot">&lt;-</span> mean_data <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(mean_value))</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    sorted_data <span class="ot">&lt;-</span> mean_data <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(mean_value)</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  <span class="do">## Obtain the top or bottom n area_names</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  selected_areas <span class="ot">&lt;-</span> sorted_data <span class="sc">%&gt;%</span> <span class="fu">slice_head</span>(<span class="at">n =</span> n) <span class="sc">%&gt;%</span> <span class="fu">pull</span>(area_name)</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter the original data to only include the selected area_names</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>  plot_data <span class="ot">&lt;-</span> state_data <span class="sc">%&gt;%</span> <span class="fu">filter</span>(area_name <span class="sc">%in%</span> selected_areas)</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(plot_data, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> <span class="fu">get</span>(var_name), <span class="at">color =</span> area_name)) <span class="sc">+</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Mean Enrollment Values"</span>) <span class="sc">+</span> </span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggtitle</span>(<span class="fu">paste</span>(var_name, <span class="st">"across years by county"</span>)) <span class="sc">+</span></span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">90</span>))</span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(Frames_Joined_On_Geo[[<span class="dv">1</span>]], <span class="at">state =</span> <span class="st">"FL"</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>, <span class="at">top_or_bottom =</span> <span class="st">"bottom"</span>, <span class="at">n =</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_line()`: Each group consists of only one observation.
+ℹ Do you need to adjust the group aesthetic?</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Project_01_Proof_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
 </div>
 </section>
 <section id="putting-it-all-together" class="level1">
 <h1>Putting it all together</h1>
 <p>Run your data processing function on the two enrollment URLs given previously, specifying an appropriate name for the enrollment data column.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">#READ: EDU01a.csv file.</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>EDU01a <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Combine Step one, step two and step three into one task.</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>My_EDU01a <span class="ot">&lt;-</span> EDU01a <span class="sc">|&gt;</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>) <span class="sc">|&gt;</span> <span class="co">#Specification of the enrollment values data column</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">1</span>, <span class="dv">7</span>))</span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co">#Assigned data based on area_name column values.</span></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="co">#Add a column that identifies the classification of data we are working with. </span></span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(County.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"county"</span>, <span class="fu">class</span>(County.Data))</span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(NonCounty.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"state"</span>, <span class="fu">class</span>(NonCounty.Data))</span>
-<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="co">#Create column with state abbreviation</span></span>
-<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> County.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">substr</span>(area_name, <span class="fu">nchar</span>(area_name) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">nchar</span>(area_name)))</span>
-<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="co">#Create column in the NonCounty dataset that returns division conditionally  </span></span>
-<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> NonCounty.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">division =</span> <span class="fu">case_when</span>(</span>
-<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"CONNECTICUT"</span>,<span class="st">"MAINE"</span>,<span class="st">"MASSACHUSETTS"</span>,<span class="st">"NEW HAMPSHIRE"</span>,<span class="st">"RHODE ISLAND"</span>,<span class="st">"VERMONT"</span>) <span class="sc">~</span> <span class="st">"New England"</span>,</span>
-<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"NEW JERSEY"</span>,<span class="st">"NEW YORK"</span>,<span class="st">"PENNSYLVANIA"</span>) <span class="sc">~</span> <span class="st">"Midwest"</span>,</span>
-<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ILLINOIS"</span>,<span class="st">"INDIANA"</span>,<span class="st">"MICHIGAN"</span>,<span class="st">"OHIO"</span>,<span class="st">"WISCONSIN"</span>) <span class="sc">~</span> <span class="st">"East North Central"</span>,</span>
-<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"IOWA"</span>,<span class="st">"KANSAS"</span>,<span class="st">"MINNESOTA"</span>,<span class="st">"MISSOURI"</span>,<span class="st">"NEBRASKA"</span>,<span class="st">"NORTH DAKOTA"</span>,<span class="st">"SOUTH DAKOTA"</span>) <span class="sc">~</span> <span class="st">"West North Central"</span>,</span>
-<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"DELAWARE"</span>,<span class="st">"FLORIDA"</span>,<span class="st">"GEORGIA"</span>,<span class="st">"MARYLAND"</span>,<span class="st">"NORTH CAROLINA"</span>,<span class="st">"SOUTH CAROLINA"</span>,<span class="st">"VIRGINIA"</span>,<span class="st">"WASHINGTON, D.C."</span>,<span class="st">"WEST VIRGINIA"</span>) <span class="sc">~</span> <span class="st">"South Atlantic"</span>,</span>
-<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALABAMA"</span>,<span class="st">"KENTUCKY"</span>,<span class="st">"MISSISSIPPI"</span>,<span class="st">"TENNESSEE"</span>) <span class="sc">~</span> <span class="st">"East South Central"</span>,</span>
-<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARKANSAS"</span>,<span class="st">"LOUISIANA"</span>,<span class="st">"OKLAHOMA"</span>,<span class="st">"TEXAS"</span>) <span class="sc">~</span> <span class="st">"West South Central"</span>,</span>
-<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARIZONA"</span>,<span class="st">"COLORADO"</span>,<span class="st">"IDAHO"</span>,<span class="st">"MONTANA"</span>,<span class="st">"NEVADA"</span>,<span class="st">"NEW MEXICO"</span>,<span class="st">"UTAH"</span>,<span class="st">"WYOMING"</span>) <span class="sc">~</span> <span class="st">"Mountain"</span>,</span>
-<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALASKA"</span>,<span class="st">"CALIFORNIA"</span>,<span class="st">"HAWAII"</span>,<span class="st">"OREGON"</span>,<span class="st">"WASHINGTON"</span>) <span class="sc">~</span> <span class="st">"Pacific"</span>,</span>
-<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>  <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"ERROR"</span></span>
-<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>County.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co">#READ: EDU01a.csv file.</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>EDU01a <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Combine Step one, step two and step three into one task.</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>My_EDU01a <span class="ot">&lt;-</span> EDU01a <span class="sc">|&gt;</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>) <span class="sc">|&gt;</span> <span class="co">#Specification of the enrollment values data column</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">1</span>, <span class="dv">7</span>))</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="co">#Assigned data based on area_name column values.</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> My_EDU01a <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="co">#Add a column that identifies the classification of data we are working with. </span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(County.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"county"</span>, <span class="fu">class</span>(County.Data))</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(NonCounty.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"state"</span>, <span class="fu">class</span>(NonCounty.Data))</span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a><span class="co">#Create column with state abbreviation</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> County.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">substr</span>(area_name, <span class="fu">nchar</span>(area_name) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">nchar</span>(area_name)))</span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a><span class="co">#Create column in the NonCounty dataset that returns division conditionally  </span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> NonCounty.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">division =</span> <span class="fu">case_when</span>(</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"CONNECTICUT"</span>,<span class="st">"MAINE"</span>,<span class="st">"MASSACHUSETTS"</span>,<span class="st">"NEW HAMPSHIRE"</span>,<span class="st">"RHODE ISLAND"</span>,<span class="st">"VERMONT"</span>) <span class="sc">~</span> <span class="st">"New England"</span>,</span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"NEW JERSEY"</span>,<span class="st">"NEW YORK"</span>,<span class="st">"PENNSYLVANIA"</span>) <span class="sc">~</span> <span class="st">"Midwest"</span>,</span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ILLINOIS"</span>,<span class="st">"INDIANA"</span>,<span class="st">"MICHIGAN"</span>,<span class="st">"OHIO"</span>,<span class="st">"WISCONSIN"</span>) <span class="sc">~</span> <span class="st">"East North Central"</span>,</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"IOWA"</span>,<span class="st">"KANSAS"</span>,<span class="st">"MINNESOTA"</span>,<span class="st">"MISSOURI"</span>,<span class="st">"NEBRASKA"</span>,<span class="st">"NORTH DAKOTA"</span>,<span class="st">"SOUTH DAKOTA"</span>) <span class="sc">~</span> <span class="st">"West North Central"</span>,</span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"DELAWARE"</span>,<span class="st">"FLORIDA"</span>,<span class="st">"GEORGIA"</span>,<span class="st">"MARYLAND"</span>,<span class="st">"NORTH CAROLINA"</span>,<span class="st">"SOUTH CAROLINA"</span>,<span class="st">"VIRGINIA"</span>,<span class="st">"WASHINGTON, D.C."</span>,<span class="st">"WEST VIRGINIA"</span>) <span class="sc">~</span> <span class="st">"South Atlantic"</span>,</span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALABAMA"</span>,<span class="st">"KENTUCKY"</span>,<span class="st">"MISSISSIPPI"</span>,<span class="st">"TENNESSEE"</span>) <span class="sc">~</span> <span class="st">"East South Central"</span>,</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARKANSAS"</span>,<span class="st">"LOUISIANA"</span>,<span class="st">"OKLAHOMA"</span>,<span class="st">"TEXAS"</span>) <span class="sc">~</span> <span class="st">"West South Central"</span>,</span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARIZONA"</span>,<span class="st">"COLORADO"</span>,<span class="st">"IDAHO"</span>,<span class="st">"MONTANA"</span>,<span class="st">"NEVADA"</span>,<span class="st">"NEW MEXICO"</span>,<span class="st">"UTAH"</span>,<span class="st">"WYOMING"</span>) <span class="sc">~</span> <span class="st">"Mountain"</span>,</span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALASKA"</span>,<span class="st">"CALIFORNIA"</span>,<span class="st">"HAWAII"</span>,<span class="st">"OREGON"</span>,<span class="st">"WASHINGTON"</span>) <span class="sc">~</span> <span class="st">"Pacific"</span>,</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>  <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"ERROR"</span></span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>County.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 31,450 × 7
    area_name   STCOU Item_ID    Enrollment_Value year  measure state
@@ -409,7 +407,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 10 Autauga, AL 01001 EDU010196D             7834 1996  EDU0101 AL   
 # ℹ 31,440 more rows</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>NonCounty.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>NonCounty.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 530 × 7
    area_name     STCOU Item_ID    Enrollment_Value year  measure division
@@ -428,46 +426,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co">#READ: EDU01b.csv file.</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>EDU01b <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>)</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Combine Step one, step two and step three into one task.</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>My_EDU01b <span class="ot">&lt;-</span> EDU01b <span class="sc">|&gt;</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>) <span class="sc">|&gt;</span> <span class="co">#Specification of the enrollment values data column</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">1</span>, <span class="dv">7</span>))</span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="co">#Assigned data based on area_name column values.</span></span>
-<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> My_EDU01b <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
-<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> My_EDU01b <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
-<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="co">#Add a column that identifies the classification of data we are working with. </span></span>
-<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(County.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"county"</span>, <span class="fu">class</span>(County.Data))</span>
-<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(NonCounty.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"state"</span>, <span class="fu">class</span>(NonCounty.Data))</span>
-<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="co">#Create column with state abbreviation</span></span>
-<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> County.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">substr</span>(area_name, <span class="fu">nchar</span>(area_name) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">nchar</span>(area_name)))</span>
-<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a><span class="co">#Create column in the NonCounty dataset that returns division conditionally  </span></span>
-<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> NonCounty.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">division =</span> <span class="fu">case_when</span>(</span>
-<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"CONNECTICUT"</span>,<span class="st">"MAINE"</span>,<span class="st">"MASSACHUSETTS"</span>,<span class="st">"NEW HAMPSHIRE"</span>,<span class="st">"RHODE ISLAND"</span>,<span class="st">"VERMONT"</span>) <span class="sc">~</span> <span class="st">"New England"</span>,</span>
-<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"NEW JERSEY"</span>,<span class="st">"NEW YORK"</span>,<span class="st">"PENNSYLVANIA"</span>) <span class="sc">~</span> <span class="st">"Midwest"</span>,</span>
-<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ILLINOIS"</span>,<span class="st">"INDIANA"</span>,<span class="st">"MICHIGAN"</span>,<span class="st">"OHIO"</span>,<span class="st">"WISCONSIN"</span>) <span class="sc">~</span> <span class="st">"East North Central"</span>,</span>
-<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"IOWA"</span>,<span class="st">"KANSAS"</span>,<span class="st">"MINNESOTA"</span>,<span class="st">"MISSOURI"</span>,<span class="st">"NEBRASKA"</span>,<span class="st">"NORTH DAKOTA"</span>,<span class="st">"SOUTH DAKOTA"</span>) <span class="sc">~</span> <span class="st">"West North Central"</span>,</span>
-<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"DELAWARE"</span>,<span class="st">"FLORIDA"</span>,<span class="st">"GEORGIA"</span>,<span class="st">"MARYLAND"</span>,<span class="st">"NORTH CAROLINA"</span>,<span class="st">"SOUTH CAROLINA"</span>,<span class="st">"VIRGINIA"</span>,<span class="st">"WASHINGTON, D.C."</span>,<span class="st">"WEST VIRGINIA"</span>) <span class="sc">~</span> <span class="st">"South Atlantic"</span>,</span>
-<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALABAMA"</span>,<span class="st">"KENTUCKY"</span>,<span class="st">"MISSISSIPPI"</span>,<span class="st">"TENNESSEE"</span>) <span class="sc">~</span> <span class="st">"East South Central"</span>,</span>
-<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARKANSAS"</span>,<span class="st">"LOUISIANA"</span>,<span class="st">"OKLAHOMA"</span>,<span class="st">"TEXAS"</span>) <span class="sc">~</span> <span class="st">"West South Central"</span>,</span>
-<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARIZONA"</span>,<span class="st">"COLORADO"</span>,<span class="st">"IDAHO"</span>,<span class="st">"MONTANA"</span>,<span class="st">"NEVADA"</span>,<span class="st">"NEW MEXICO"</span>,<span class="st">"UTAH"</span>,<span class="st">"WYOMING"</span>) <span class="sc">~</span> <span class="st">"Mountain"</span>,</span>
-<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALASKA"</span>,<span class="st">"CALIFORNIA"</span>,<span class="st">"HAWAII"</span>,<span class="st">"OREGON"</span>,<span class="st">"WASHINGTON"</span>) <span class="sc">~</span> <span class="st">"Pacific"</span>,</span>
-<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a>  <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"ERROR"</span></span>
-<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a>))</span>
-<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a>County.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">#READ: EDU01b.csv file.</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>EDU01b <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Combine Step one, step two and step three into one task.</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>My_EDU01b <span class="ot">&lt;-</span> EDU01b <span class="sc">|&gt;</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">"area_name"</span> <span class="ot">=</span> Area_name, STCOU, <span class="fu">ends_with</span>(<span class="st">"D"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">ends_with</span>(<span class="st">"D"</span>),</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"Item_ID"</span>,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"Enrollment_Value"</span>) <span class="sc">|&gt;</span> <span class="co">#Specification of the enrollment values data column</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year =</span> <span class="fu">case_when</span>(</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&gt;</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"19"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>)),  </span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>, <span class="dv">9</span>) <span class="sc">&lt;=</span> <span class="dv">24</span> <span class="sc">~</span> <span class="fu">paste0</span>(<span class="st">"20"</span>, <span class="fu">substr</span>(Item_ID, <span class="dv">8</span>,<span class="dv">9</span>))),</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">measure =</span> <span class="fu">substr</span>(Item_ID, <span class="dv">1</span>, <span class="dv">7</span>))</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="co">#Assigned data based on area_name column values.</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> My_EDU01b <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> My_EDU01b <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">", [A-Z][A-Z]"</span>, area_name))</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="co">#Add a column that identifies the classification of data we are working with. </span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(County.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"county"</span>, <span class="fu">class</span>(County.Data))</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(NonCounty.Data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"state"</span>, <span class="fu">class</span>(NonCounty.Data))</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a><span class="co">#Create column with state abbreviation</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>County.Data <span class="ot">&lt;-</span> County.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">substr</span>(area_name, <span class="fu">nchar</span>(area_name) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">nchar</span>(area_name)))</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a><span class="co">#Create column in the NonCounty dataset that returns division conditionally  </span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>NonCounty.Data <span class="ot">&lt;-</span> NonCounty.Data <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">division =</span> <span class="fu">case_when</span>(</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"CONNECTICUT"</span>,<span class="st">"MAINE"</span>,<span class="st">"MASSACHUSETTS"</span>,<span class="st">"NEW HAMPSHIRE"</span>,<span class="st">"RHODE ISLAND"</span>,<span class="st">"VERMONT"</span>) <span class="sc">~</span> <span class="st">"New England"</span>,</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"NEW JERSEY"</span>,<span class="st">"NEW YORK"</span>,<span class="st">"PENNSYLVANIA"</span>) <span class="sc">~</span> <span class="st">"Midwest"</span>,</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ILLINOIS"</span>,<span class="st">"INDIANA"</span>,<span class="st">"MICHIGAN"</span>,<span class="st">"OHIO"</span>,<span class="st">"WISCONSIN"</span>) <span class="sc">~</span> <span class="st">"East North Central"</span>,</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"IOWA"</span>,<span class="st">"KANSAS"</span>,<span class="st">"MINNESOTA"</span>,<span class="st">"MISSOURI"</span>,<span class="st">"NEBRASKA"</span>,<span class="st">"NORTH DAKOTA"</span>,<span class="st">"SOUTH DAKOTA"</span>) <span class="sc">~</span> <span class="st">"West North Central"</span>,</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"DELAWARE"</span>,<span class="st">"FLORIDA"</span>,<span class="st">"GEORGIA"</span>,<span class="st">"MARYLAND"</span>,<span class="st">"NORTH CAROLINA"</span>,<span class="st">"SOUTH CAROLINA"</span>,<span class="st">"VIRGINIA"</span>,<span class="st">"WASHINGTON, D.C."</span>,<span class="st">"WEST VIRGINIA"</span>) <span class="sc">~</span> <span class="st">"South Atlantic"</span>,</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALABAMA"</span>,<span class="st">"KENTUCKY"</span>,<span class="st">"MISSISSIPPI"</span>,<span class="st">"TENNESSEE"</span>) <span class="sc">~</span> <span class="st">"East South Central"</span>,</span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARKANSAS"</span>,<span class="st">"LOUISIANA"</span>,<span class="st">"OKLAHOMA"</span>,<span class="st">"TEXAS"</span>) <span class="sc">~</span> <span class="st">"West South Central"</span>,</span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ARIZONA"</span>,<span class="st">"COLORADO"</span>,<span class="st">"IDAHO"</span>,<span class="st">"MONTANA"</span>,<span class="st">"NEVADA"</span>,<span class="st">"NEW MEXICO"</span>,<span class="st">"UTAH"</span>,<span class="st">"WYOMING"</span>) <span class="sc">~</span> <span class="st">"Mountain"</span>,</span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>  area_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"ALASKA"</span>,<span class="st">"CALIFORNIA"</span>,<span class="st">"HAWAII"</span>,<span class="st">"OREGON"</span>,<span class="st">"WASHINGTON"</span>) <span class="sc">~</span> <span class="st">"Pacific"</span>,</span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>  <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"ERROR"</span></span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>))</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>County.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 31,450 × 7
    area_name   STCOU Item_ID    Enrollment_Value year  measure state
@@ -484,7 +482,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 10 Autauga, AL 01001 EDU015206D             9652 2006  EDU0152 AL   
 # ℹ 31,440 more rows</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>NonCounty.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>NonCounty.Data</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 530 × 7
    area_name     STCOU Item_ID    Enrollment_Value year  measure division
@@ -504,13 +502,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Run your data combining function to put these into one object (with two data frames)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Enter URL and variable input into function to assign an object in the environment.</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>result_a <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>, Enrollment_Value)</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>result_b <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>, Enrollment_Value)</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">#Combine the resulting lists containing two tibbles such that state combines with state and county combines with county.</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>joined_results <span class="ot">&lt;-</span> <span class="fu">combine_results</span>(result_a, result_b)</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>joined_results</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Enter URL and variable input into function to assign an object in the environment.</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>result_a <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv"</span>, Enrollment_Value)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>result_b <span class="ot">&lt;-</span> <span class="fu">Split_Data_Along_Geography</span>(<span class="st">"https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv"</span>, Enrollment_Value)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co">#Combine the resulting lists containing two tibbles such that state combines with state and county combines with county.</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>joined_results <span class="ot">&lt;-</span> <span class="fu">combine_results</span>(result_a, result_b)</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>joined_results</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[[1]]
 # A tibble: 62,900 × 7
@@ -547,8 +545,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Use the plot function on the state data frame</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Plot state from joined_results list element 2 (the state tibble)</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.state</span>(joined_results[[<span class="dv">2</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Plot state from joined_results list element 2 (the state tibble)</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.state</span>(joined_results[[<span class="dv">2</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>`summarise()` has grouped output by 'division'. You can override using the
 `.groups` argument.</code></pre>
@@ -563,43 +561,49 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Use the plot function on the county data frame</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “NC”, the group being the top, the number looked at being 20</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(joined_results[[<span class="dv">1</span>]],<span class="at">state=</span><span class="st">"NC"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">20</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “NC”, the group being the top, the number looked at being 20</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(joined_results[[<span class="dv">1</span>]],<span class="at">state=</span><span class="st">"NC"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">20</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “SC”, the group being the bottom, the number looked at being 7</span></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(joined_results[[<span class="dv">1</span>]],<span class="at">state=</span><span class="st">"SC"</span>, <span class="at">top_or_bottom =</span> <span class="st">"bottom"</span>, <span class="at">top_bottom_count =</span> <span class="dv">7</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “SC”, the group being the bottom, the number looked at being 7</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(joined_results[[<span class="dv">1</span>]],<span class="at">state=</span><span class="st">"SC"</span>, <span class="at">top_or_bottom =</span> <span class="st">"bottom"</span>, <span class="at">top_bottom_count =</span> <span class="dv">7</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once without specifying anything (defaults used)</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(joined_results[[<span class="dv">1</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once without specifying anything (defaults used)</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(joined_results[[<span class="dv">1</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “PA”, the group being the top, the number looked at being 8</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(joined_results[[<span class="dv">1</span>]],<span class="at">state=</span><span class="st">"PA"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">8</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “PA”, the group being the top, the number looked at being 8</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(joined_results[[<span class="dv">1</span>]],<span class="at">state=</span><span class="st">"PA"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">8</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Lastly, read in another couple similar data sets and apply your functions! Run your data processing function on the four data sets at URLs given below: – https://www4.stat.ncsu.edu/~online/datasets/PST01a.csv – https://www4.stat.ncsu.edu/~online/datasets/PST01b.csv – https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv – https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="do">##DO NOT EVAL</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <p>Run your data combining function (probably three times) to put these into one object (with two data frames)</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="do">##DO NOT EVAL</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <p>Use the plot function on the state data frame</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.state</span>([[<span class="dv">2</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.state</span>([[<span class="dv">2</span>]])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Use the plot function on the county data frame</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “CA”, the group being the top, the number looked at being 15</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(,<span class="at">state=</span><span class="st">"CA"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">15</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “CA”, the group being the top, the number looked at being 15</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(,<span class="at">state=</span><span class="st">"CA"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">15</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “TX”, the group being the top, the number looked at being 4</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(,<span class="at">state=</span><span class="st">"TX"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">4</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “TX”, the group being the top, the number looked at being 4</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(,<span class="at">state=</span><span class="st">"TX"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">4</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once without specifying anything (defaults used)</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once without specifying anything (defaults used)</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “NY”, the group being the top, the number looked at being 1</span></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(,<span class="at">state=</span><span class="st">"NY"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">1</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Once specifying the state to be “NY”, the group being the top, the number looked at being 1</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.county</span>(,<span class="at">state=</span><span class="st">"NY"</span>, <span class="at">top_or_bottom =</span> <span class="st">"top"</span>, <span class="at">top_bottom_count =</span> <span class="dv">1</span>, <span class="at">var_name =</span> <span class="st">"Enrollment_Value"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 

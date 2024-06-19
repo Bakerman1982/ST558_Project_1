@@ -1,11 +1,13 @@
 ---
-title: "Data Manipulation (EDIT TITLE)"
+title: "Data Manipulation"
 author: "Brock Akerman"
 format: html
 ---
 
+
 ```{r setup, echo=T, output=F}
 require(tidyverse)
+require(rlang)
 options(readr.show_col_types = FALSE)
 ```
 
@@ -98,9 +100,6 @@ County.Data
 NonCounty.Data
 ```
 
-
-
-  
 # Combining Data Functions
 
 Instead of running each individual code chunk, we could create a function 
@@ -223,60 +222,45 @@ plot.state <- function(df.state, var_name = "Enrollment_Value") {
 plot.state(Frames_Joined_On_Geo[[2]], "Enrollment_Value")
 ```
 
-```{r, eval=FALSE, echo=TRUE}
-#Plotting for our county data
+```{r, eval=TRUE, echo=TRUE}
+plot.county <- function(data, state = "TX", var_name = "Enrollment_Value", top_or_bottom = "top", n = 5) {
 
-plot.county <- function(data, state = "FL", top_or_bottom = "top", n = 5, var_name) {
+  # Filter the data to only include data from the specified state
+  state_data <- data %>% filter(state == !!state)
+
   
-  # Ensure the input for top_or_bottom is valid
-  if(!top_or_bottom %in% c("top", "bottom")) {
-    stop("Invalid value for 'top_or_bottom'. Must be 'top' or 'bottom'.")
-  }
-  
-  # Filter data for the specified state
-  state_data <- data %>%
-    filter(state == state)
-  
-  # Calculate the mean of the specified variable for each Area_name
-  mean_values <- state_data %>%
+  # Calculate the overall mean of the specified statistic for each area_name
+  mean_data <- state_data %>%
     group_by(area_name) %>%
-    summarise(mean_value = mean(get(var_name), na.rm = TRUE)) %>%
-    ungroup()
+    summarise(mean_value = mean(get(var_name), na.rm = TRUE))
+
   
-  # Sort the Area_names based on the mean values
-  if(top_or_bottom == "top") {
-    sorted_values <- mean_values %>%
-      arrange(desc(mean_value))
+  # Sort the mean values from largest to smallest if 'top' is specified, or smallest to largest if 'bottom' is specified
+  if (top_or_bottom == "top") {
+    sorted_data <- mean_data %>% arrange(desc(mean_value))
   } else {
-    sorted_values <- mean_values %>%
-      arrange(mean_value)
+    sorted_data <- mean_data %>% arrange(mean_value)
   }
-  
-  # Get the top or bottom n Area_names
-  selected_area_names <- sorted_values %>%
-    slice(1:n) %>%
-    pull(area_name)
-  
-  # Filter the original data for these Area_names
-  final_data <- state_data %>%
-    filter(area_name %in% selected_area_names)
-  
-  return(final_data)
-}
 
-plot.county(Frames_Joined_On_Geo[[1]], state = "FL", top_or_bottom = "top", n = 1, var_name = "Enrollment_Value")
+
+  ## Obtain the top or bottom n area_names
+  selected_areas <- sorted_data %>% slice_head(n = n) %>% pull(area_name)
 
 
 
-  
-# Plot the input that will go into the plot.county function once it is running.
-  #ggplot(df_filtered, aes(x = year, y = mean_enrollment, color = division))+
-  #  geom_line(aes(group = division)) +
-  #  geom_point() +
-  #  labs(x = "Year", y = "Mean Enrollment Values") + 
-  #  ggtitle(paste("Mean", var_name, "across years by division"))
-  #  
-  
+  # Filter the original data to only include the selected area_names
+  plot_data <- state_data %>% filter(area_name %in% selected_areas)
+
+
+  ggplot(plot_data, aes(x = year, y = get(var_name), color = area_name)) +
+    geom_line() +
+    geom_point() +
+    labs(x = "Year", y = "Mean Enrollment Values") + 
+    ggtitle(paste(var_name, "across years by county")) +
+    theme(axis.text.x = element_text(angle = 90))
+  }
+
+plot.county(Frames_Joined_On_Geo[[1]], state = "FL", var_name = "Enrollment_Value", top_or_bottom = "bottom", n = 5)
 ```
 
 # Putting it all together
@@ -413,10 +397,12 @@ Lastly, read in another couple similar data sets and apply your functions! Run y
  – https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv
  – https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv
 ```{r}
+##DO NOT EVAL
 ``` 
  
 Run your data combining function (probably three times) to put these into one object (with two data frames)
 ```{r}
+##DO NOT EVAL
 ```
 
 Use the plot function on the state data frame
