@@ -14,67 +14,75 @@ options(readr.show_col_types = FALSE)
 
 The Census Bureau’s Statistical Compendia Program collected geographical-based educational data that we aim to make useful. However, this data requires wrangling first. This demonstration will include a step-by-step explanation of the manual approach to formatting a single dataset into a useful set of tibbles for analysis. Next, I will explain a function-based approach that combines many elements of the manual method, making it easier to upload, wrangle, combine, and analyze two or more datasets. Finally, I will demonstrate how to use all the explained code to transition from raw comma-separated values to rendered ggplots.  
 
-#### Data Processing -- The Manual Approach
+#### Data Processing -- The Practicable Approach
 
 
-```{r, echo=TRUE}
-#Read-in the dataset.
+```{r, echo=T, output=T}
+#Read-in a comma-separated values dataset.
 EDU01a <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
+EDU01a
 ```
 
-We need data. The first order of business is to read a file into the R environment. A call to read_csv from the readr package and a URL pointing to a comma-separated value (CSV) file will produce our first dataset. For now, I assigned the data to an object using the original file name.
+We need data. The first order of business is to read a file into the R environment. A call to `read_csv` from the `readr` package and a URL pointing to a comma-separated value (CSV) file will produce our first dataset. For now, I assigned the data to an object using the original file name.
 
-```{r, echo=TRUE}
+```{r, echo=T, output=T}
 #Select specific columns of interest from the dataset.
 My_EDU01a <- EDU01a |>
   select("area_name" = Area_name, STCOU, ends_with("D"))
+My_EDU01a
 ```
 
-The moment I make changes to the dataset, I want to reassign the object to a new name for clarity indicating that the dataset I am now working with is not the original. With a new object name, a call to the 'select()' function in the tidyverse narrows down the columns I am interested in. The Area_name column is lowercased, STCOU remains unchanged, and I use the 'ends_with()' function to select all columns with headers ending in the letter "D".
+Whenever I alter a dataset for the first time I rename the object indicating that the dataset I am now working with is not the original. Besides providing clarity on what the object is, renaming is also helpful for when a mistake is made.  I do not have to read in the entire dataset again using a readr package.  The original is already in the R environment so I simply overwrite the copy with the original and start over.  With a new object named, a call to the `select()` function in the tidyverse narrows down the columns I am interested in. The _Area_name_ column is lower-cased to _area_name_, STCOU remains unchanged, and I use the `ends_with()` function to select all columns with headers ending in the letter "D".
 
-```{r, echo=TRUE}
+```{r, echo=T, output=T}
 #Convert the data to longer formatting. 
 My_EDU01a <- My_EDU01a |>
   pivot_longer(
         cols = ends_with("D"),
         names_to = "Item_ID",
         values_to = "Enrollment_Value")
+My_EDU01a
 ```
 
-The data is in a wide format, making it difficult to read. A call to pivot_longer() collapses all of the columns ending in "D" into a single column called "Item_ID". Values in this dataset are assigned to a new column header called "Enrollment_Value".
+The data is in a wide format, making it difficult to read. A call to `pivot_longer()` collapses all of the columns ending in "D" into a single column called _Item_ID_. Values in this dataset are assigned to a new column header called _Enrollment_Value_.
 
-```{r, echo=TRUE}
-#Parse Strings into numeric, survey, and measurement types.  
+```{r, echo=T, output=T}
+#Parse Strings into year and measurement types.  
 My_EDU01a <- My_EDU01a |>
   mutate(year = case_when(
         substr(Item_ID, 8, 9) > 24 ~ paste0("19", substr(Item_ID, 8,9)),  
         substr(Item_ID, 8, 9) <= 24 ~ paste0("20", substr(Item_ID, 8,9))),
         measure = substr(Item_ID, 1, 7))
+My_EDU01a
 ```
 
-Hidden within the Item_ID are two pieces of information that will assist our analysis. The last two numeric values in the ID pertain to the year of the observation, while the first seven alphanumeric characters pertain to a specific type of measure. In this step, the code below extracts both pieces of information using `substr()` and funnels them into new columns using `mutate()`.
+Hidden within the _Item_ID_ are two pieces of information that will assist our analysis. The last two numeric values in the ID pertain to the year of the observation, while the first seven alphanumeric characters pertain to a specific type of measure. In this step, the code above extracts both pieces of information using `substr()` and funnels them into new columns using `mutate()`.
 
-There are two scenarios we need to account for to accurately wrangle our data. The data was collected between the 1980s and the 2010s; only the last two digits of the year are given. For our data analysis, we need to convert the newly mutated year column from a two-digit year to a four-digit year. This requires consideration for the century-spanning date range of the collected data. Using a call to `case_when()` with a subset of `substr()`, we can handle each of the scenarios and perform different actions on them based on their values. If the digit is greater than twenty-four, that would indicates that the year the data collected fell between 1980 and 1999 inclusive, as it would have been impossible to collect data from 2080 to 2099--dates which have not yet occurred. Likewise, values less than or equal to twenty-four are attributed to the years 2000 through 2024, since observations from 1900 to 1924 would not be likely based on information on this dataset provided from the Census Bureau and the gap in dates that would be present from 1924 through 1980.  Using the `paste0()` function, a "19" or "20" is added to the front of the two-digit year provided, depending on its value and then added to the 'year' column.  
+There are two scenarios we need to account for to accurately wrangle our data. The data contains observations with a range of 1980 to  2010; only the last two digits of the year are given. For our data analysis, we need to convert the newly mutated year column from a two-digit year to a four-digit year so we can order it properly on an axis. This requires consideration for the century-spanning date range of the collected data. Using a call to `case_when()` with a subset of `substr()`, we can handle each of the scenarios and perform different actions on them based on their values. If the digit is greater than twenty-four, that would indicates that the year the data collected fell between 1980 and 1999 inclusive, as it would have been impossible to collect data from 2080 to 2099--dates which have not yet occurred. Likewise, values less than or equal to twenty-four are attributed to the years 2000 through 2024, since observations from 1900 to 1924 would not be likely based on information on this dataset provided from the Census Bureau and the gap in dates that would be present from 1924 through 1980.  Using the `paste0()` function, a "19" or "20" is added to the front of the two-digit year provided, depending on its value and then loaded into the _year_ column.  
 
-The creation of the new column 'measure' was straightforward using a simple `substr()` call and removing the first seven characters from the string. The object name our mutated data will remain constant, and the dataset altered earlier with `filter()` is used here with pipes instead of the original from the readr package, thus maintaining continuity.
+The creation of the new column 'measure' was straightforward using a simple `substr()` call and removing the first seven characters from the string. Our mutated data will keep the object name and the dataset altered earlier with `filter()` is used here with pipes instead of the original from the readr package, thus maintaining continuity.
 
-```{r, echo=TRUE}
+```{r, echo=T, output=T}
 #From the parameterized version of the EDU table, I have separated out the two tables by county and non-county. 
 County.Data <- My_EDU01a |> filter(grepl(", [A-Z][A-Z]", area_name))
 NonCounty.Data <- My_EDU01a |> filter(!grepl(", [A-Z][A-Z]", area_name))
 
-#Add a column that identifies the classification of data we are working with. 
+#Add a classification that identifies the data we are working with.  We will lean on this later when combining data. 
 class(County.Data) <- c("county", class(County.Data))
 class(NonCounty.Data) <- c("state", class(NonCounty.Data))
+
+County.Data
+NonCounty.Data
 ```
 
-There is more information to extract. Our datasets can be partitioned based on whether the area_name column contains a county-state abbreviation combination or just a state. Leveraging `filter()`, `grepl()`, specific string formatting criteria, and negation logic, the following code separates the data into County and NonCounty groupings.
+There is more information to extract. Our datasets can be partitioned based on whether the area_name column contains a county-state abbreviation combination or just a state. Leveraging `filter()`, `grepl()`, specific string formatting criteria, and negation logic, the preceding code separates the data into County and NonCounty groupings.
 
-A class is assigned to the data. This is done because later on in the wrangling steps, both of these tibbles will be placed in a list, and we will want to set the class to "county" or "state" to accurately combine our tibbles based on their unique geographic profiles.
+A class is then assigned to the data. This is done because later on in the wrangling steps, both of these tibbles will be placed in a list, and we will want to set the class to "county" or "state" to accurately combine our tibbles based on their unique geographic profiles.
 
-```{r, echo=TRUE}
-# Create column in the County dataset that returns State
+```{r, echo=T, output=T}
+#Create a column in the County dataset that returns State.
 County.Data <- County.Data |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
+County.Data
 ```
 
 When plotting our data, the function will need a breakdown of county performance by state. For that, we will need a new column that contains just the state abbreviation. Here, `mutate()` and `substr()` make quick work of this task. The arguments for substr(`a`, `b`, `c`) to extract are:
@@ -83,10 +91,10 @@ When plotting our data, the function will need a breakdown of county performance
 `b` - the starting position\
 `c` - the ending position\
 
-The function `nchar()` returns the number of characters in the string. Using `nchar()` was necessary because of the varying lengths of each value in the area_name column. One pattern was uniform throughout the datasets: the last two characters of any value in this column denoted the state. In `substr()`, the first input was the column to be parsed. The second input was the number of characters in the column value minus one character—or in other words, the second-to-last character. The final input was the number of characters in the column value. This approach ensures that the mutation will always extract the last two characters of the column value.
+The function `nchar()` returns the number of characters in the string. Using `nchar()` was necessary because of the varying lengths of each value in the area_name column. One pattern was uniform throughout the datasets: the last two characters of any value in this column denoted the state. In `substr()`, the first input was the column to be parsed. The second input was the number of characters in the column value minus one character—or in other words, the second-to-last character. The final input was the number of characters in the column value which would cause the `substr()` to stop at the last character. This approach ensures that the mutation will always extract the last two characters of the column value.
 
 
-```{r, echo=TRUE}
+```{r, echo=T, output=T}
 # Create column in the NonCounty dataset that returns division conditionally  
 NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
     area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
@@ -100,17 +108,18 @@ NonCounty.Data <- NonCounty.Data |> mutate(division = case_when(
     area_name %in% c("ALASKA","CALIFORNIA","HAWAII","OREGON","WASHINGTON") ~ "Pacific",
     TRUE ~ "ERROR"
 ))
+NonCounty.Data
 ```
 
-The Non-County data can be broken down into different regions, called divisions by the Census Bureau. A new column is needed to partition each group of states into their respective divisions. Creating new columns requires a call to `mutate()`. Using `case_when()`, a conditional check on the area_name column looks at a state and, if it is in a specified vector, assigns it to the appropriate division using the tilde (`~`). This involves a considerable amount of manual typing, but there are few alternatives for assigning each observation to its proper division. For cases when an area_name observation is not one of the states grouped into a division, the column value is assigned "ERROR".
+The Non-County data can be broken down into different regions, called divisions, by the Census Bureau. A new column is needed to partition each group of states into their respective divisions. Creating new columns requires a call to `mutate()`. Using `case_when()`, a conditional check on the _area_name_ column looks at a state and, if it is in a specified vector, assigns it to the appropriate division using the tilde (`~`). This involves a considerable amount of manual typing, but there are few alternatives for assigning each observation to its proper division. For cases when an _area_name_ observation is not one of the states grouped into a division, the column value is assigned "ERROR".
 
-The data is now organized, relevant, and ready to be analyzed. In scenarios where we might have multiple datasets to process or where we need to perform repeated actions, avoiding manual renaming of readr inputs and writing custom code is essential for saving time. Next, I will demonstrate how to address such situations. All the programming I have shown will be nested into a function. Additionally, I will introduce a new function that combines these listed tibbles based on their geographical profiles.
+The data is now organized, relevant, and ready to be analyzed. In scenarios where we might have multiple datasets to process or where we need to perform this action on many datasets repeatedly, avoiding manual renaming of readr inputs and writing custom code is essential for saving time. Next, I will demonstrate how to address such situations. All the programming I have shown will be nested into a function which you can call using a URL. Additionally, I will introduce a new function that combines these listed tibbles based on their geographical profiles.
 
-#### Data Processing and Combining Data -- a Functional Approach
+#### Data Processing and Combining Data -- a Practical Approach
 
 
-```{r, echo=TRUE}
-#The first function selects and elongates our data. 
+```{r, echo=T, output=T}
+#This function selects and elongates our data. 
 MyFunct0102 <- function(dataset_select_pivot, Enrollment_Values = Enrollment_Values) {
   dataset_select_pivot %>%
       select("area_name" = Area_name, STCOU, ends_with("D")) %>%
@@ -120,8 +129,9 @@ MyFunct0102 <- function(dataset_select_pivot, Enrollment_Values = Enrollment_Val
         values_to = "Enrollment_Value")
 }
 ```
-```{r, echo=TRUE}
-#The second function creates a new column for 'year' and 'measure'.
+
+```{r, echo=T, output=T}
+#This function creates a new column for 'year' and 'measure'.
 MyFunct03 <- function(dataset_mutate) {
   dataset_mutate %>%
     mutate(year = case_when(
@@ -130,15 +140,16 @@ MyFunct03 <- function(dataset_mutate) {
       measure = substr(Item_ID, 1, 7))
 }
 ```
-```{r, echo=TRUE}
-#The third function creates a new column for state abbreviation inside the County Data tibble.
+
+```{r, echo=T, output=T}
+#This function creates a new column for state abbreviation inside the County Data tibble.
 MyFunct05 <- function(County_Data_Mutate){
   County_Data <- County_Data_Mutate |> mutate(state = substr(area_name, nchar(area_name) - 1, nchar(area_name)))
 }
 ```
 
-```{r, echo=TRUE}
-#The fourth function creates a new column for divisional descriptors inside the NonCounty Data tibble.
+```{r, echo=T, output=T}
+#This function creates a new column for divisional descriptors inside the NonCounty Data tibble.
 MyFunct06 <- function(NonCounty_Data_Mutate){
   NonCounty_Data <- NonCounty_Data_Mutate |> mutate(division = case_when(
     area_name %in% c("CONNECTICUT","MAINE","MASSACHUSETTS","NEW HAMPSHIRE","RHODE ISLAND","VERMONT") ~ "New England",
@@ -154,8 +165,8 @@ MyFunct06 <- function(NonCounty_Data_Mutate){
 }
 ```
 
-```{r, echo=TRUE}
-#The fifth function separates our data into County vs. NonCounty, then it calls on the functions above that mutate a new column for state in the county tibble or a division column in the state tibble. Finally, it adds class to their respective tibble to make calling on it while inside a list easy.  
+```{r, echo=T, output=T}
+#This function separates our data into County vs. NonCounty, then it calls on the functions above that mutate a new column for state in the county tibble or a division column in the state tibble. Finally, it adds class to their respective tibble to make calling on it while inside a list easy.  
 MyFunct04 <- function(dataset_partition) {  
 
   #Step 4--Separate the data into its two parts--County and NonCounty
@@ -174,9 +185,9 @@ MyFunct04 <- function(dataset_partition) {
 }
 ```
 
-Each of the manual steps demonstrated earlier is now encapsulated into a function. Each function performs specific actions on the data. When called in the appropriate order, these functions execute the same data wrangling processes we performed earlier, but now within a single, convenient function.
+Each of the manual steps demonstrated earlier are now encapsulated into a function. Each function performs specific actions on the data. When called in the appropriate order, these functions execute the same data wrangling processes we performed earlier, but now within a single, convenient function.
 
-```{r, echo=TRUE}
+```{r, echo=T, output=T}
 #The Wrapper Function
 Split_Data_Along_Geography <- function(url, Enrollment_Value = "Enrollment_Value") {
   if (!str_ends(url, ".csv")) {
@@ -189,16 +200,16 @@ Split_Data_Along_Geography <- function(url, Enrollment_Value = "Enrollment_Value
 }
 ```
 
-This wrapper function is designed to "wrap" around all other functions, ensuring they run in the required order.  User of the function will provide a URL argument and an Enrollment_Value input.  The second input is default on the column labeled "Enrollment_Value".   The first part of this function checks if the loaded file is a comma-separated values file (CSV). With increased automation, these stops and checks are necessary to prevent errors. If the supplied link does not end in ".csv", the function terminates and issues a warning. Assuming an acceptable link is provided, the function automatically reads the CSV from the URL, applies each function in the specified order, and stores the resulting data as _result_.
+This wrapper function is designed to "wrap" around all other functions, ensuring they run in the required order.  User of the function will provide a URL argument and an _Enrollment_Value_ input.  The second input is default on the column labeled _Enrollment_Value_.   The first part of this function checks if the loaded file is a comma-separated values file (CSV). With increased automation, I decided to add a stop call to prevent unnecessary errors. If the supplied link does not end in ".csv", the function terminates and issues a warning. Assuming an acceptable link is provided, the called function automatically reads the CSV from the URL, applies each function in the specified order, and stores the resulting data as _result_.
 
-```{r, echo=TRUE}
+```{r, echo=T, output=T}
 #Call your data...  Test to see if the URLs produce the intended outcome. 
 result_a <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", Enrollment_Value)
 result_b <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", Enrollment_Value)
 result_a; result_b;
 ```
 
-```{r, echo=TRUE}
+```{r, echo=T, output=T}
 #Combine your data...  This function takes the results of two or more URLs and produces a list of combined Tibbles separated by County and NonCounty.
 
 combine_results <- function(...) {
@@ -218,11 +229,11 @@ combine_results(result_a, result_b)
 ```
 Testing out the wrapper function, I called the function with the appropriate .csv file and default arguments, producing two lists, each containing a county and state tibble. Next, I used the `combine_results()` function with these lists as arguments. This function combines counties with counties and states with states across the results.
 
-The data is ready for analysis, whether manually or through functions, and we can process many tibbles quickly if more data is needed.  It is challenging to find insights in a tibble, especially one so large.  Rather than pour over the tibble looking through thousands of rows for interesting trends, a visual aide would be a better place to start your search.  In the final demonstration, two new functions will be introduced; a unique function for each one of the county and state datasets.
+The data is ready for analysis, whether manually or through functions, and we can process many tibbles quickly if more data is needed.  It is challenging to find insights in a tibble though, especially one so large.  Rather than pour over the tibble looking through thousands of rows for interesting trends, a visual aide would be a better place to start your search.  In the final demonstration, two new functions will be introduced; a unique plotting function for each one of the county and state datasets.
 
-#### Applications of Wrangled Data into Graphicial Insights
+#### Application:  Turning Wrangled Data into Graphicial Insight
 
-```{r, echo=TRUE, output=FALSE}
+```{r, echo=T, output=T}
 #Plotting function for state data
 plot.state <- function(df.state, var_name = "Enrollment_Value") {
   # Filter out rows where Division is "ERROR" and compute mean enrollment of the input var_name, all by division and year.
@@ -248,9 +259,7 @@ Recall that we assigned _area_name_ values not listed as states as "ERROR". In t
 
 Inside ggplot, a simple call uses the wrangled object _df_filtered_. The aesthetics include years along the x-axis and mean _Enrollment_Values_ along the y-axis. Adding color within `aes()` acts as a grouping mechanism, assigning unique colors to each division in the legend and geom layers. Towards the end of the ggplot call, there are administrative options for better presentation: appropriate labels and titles, an option to prevent scientific notation in y-axis values, and a theme adjustment to orient labels vertically for improved readability.
 
-
-
-```{r, eval=TRUE, echo=TRUE}
+```{r, echo=T, output=T}
 plot.county <- function(data, state = "NC", var_name = "Enrollment_Value", top_or_bottom = "top", n = 5) {
 
   # Filter the data to only include data from the specified state
@@ -286,10 +295,25 @@ plot.county <- function(data, state = "NC", var_name = "Enrollment_Value", top_o
 #plot.county(Frames_Joined_On_Geo[[1]], state = "FL", var_name = "Enrollment_Value", top_or_bottom = "top", n = 9)
 ```
 
-# Putting it all together
+When plotting the county data, we are interested in the _Enrollment_Value_ statistic by year and state. The function is built for inputs of higher or lower performing counties. The function also allows the user to specify the number of counties from top or bottom to view. These parameters are all input arguments that the function accepts.  Running plot.county should output a customizable line chart. Here is how you build it.  
+
+I can best describe what this function is doing by the order with which the functions acts on our data.  The function first filters the county data to show only the state specified in the function input. There were errors and warning popping up in console when creating this function with the state object so I turned to the R package `rlang` and the `!!` operator to correctly filter my rows. The filtered data is saved to the object _state_data_.
+
+Next, the overall mean is calculated. I used tidyverse piping and syntax on _state_data_ to obtain the mean of the _var_name_. _Enrollment_Value_ was the _var_name_ in all cases, and a list of state and _mean_value_ was saved to the object _mean_data_.
+
+The function needs to order the _mean_data_ by the _mean_value_ column based on the input for the _top_or_bottom_ variable. A conditional if statement was added to handle each of the two acceptable cases, sorting in ascending or descending order accordingly. The _mean_data_, now sorted, is assigned to the new object _sorted_data_.
+
+We are not interested in plotting these overall means but rather the _Enrollment_Value_ statistics of the top or bottom performing counties by their overall means. In this step, the sorted data is first checked against the `n` input in the function, and only the relevant areas are extracted. The result is a list of top or bottom performing counties, with the quantity specified in the inputs, all assigned to the object _selected_areas_.
+
+Before plotting, we extract the areas in _selected_areas_ from the initial _state_data_ and assign this new set to _plot_data_. This set should contain exactly what we need to plot: a list of counties with `n` top or bottom performers and their _Enrollment_Values_.
+
+This ggplot is nearly identical to the plot for state data. The only differences are the title and the plotting of _Enrollment_Values_ statistics instead of the mean values in the state plot.  We now have beautiful, customizable plots which provide a summary look into our tibbles.  Next up is a stress test our code.  Input values will vary, so too should our plots.  
+
+#### Stress Testing the Programming Code
 
 Run your data processing function on the two enrollment URLs given previously, specifying an appropriate name for the enrollment data column.
-```{r}
+
+```{r, echo=T, output=T}
 #READ: EDU01a.csv file.
 EDU01a <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv")
 
@@ -334,7 +358,7 @@ NonCounty.Data
 ```
 
 
-```{r}
+```{r, echo=T, output=T}
 #READ: EDU01b.csv file.
 EDU01b <- read_csv("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv")
 
@@ -379,7 +403,7 @@ NonCounty.Data
 ```
 
 Run your data combining function to put these into one object (with two data frames)
-```{r}
+```{r, echo=T, output=T}
 #Enter URL and variable input into function to assign an object in the environment.
 result_a <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01a.csv", Enrollment_Value)
 result_b <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/EDU01b.csv", Enrollment_Value)
@@ -390,28 +414,28 @@ joined_results
 ```
 
 Use the plot function on the state data frame
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 #Plot state from joined_results list element 2 (the state tibble)
 plot.state(joined_results[[2]])
 ```
 
 Use the plot function on the county data frame
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 #Once specifying the state to be “NC”, the group being the top, the number looked at being 20
 plot.county(joined_results[[1]],state="NC", top_or_bottom = "top", n = 20, var_name = "Enrollment_Value")
 ```
 
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 #Once specifying the state to be “SC”, the group being the bottom, the number looked at being 7
 plot.county(joined_results[[1]],state="SC", top_or_bottom = "bottom", n = 7, var_name = "Enrollment_Value")
 ```
 
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 #Once without specifying anything (defaults used)
 plot.county(joined_results[[1]])
 ```
 
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 #Once specifying the state to be “PA”, the group being the top, the number looked at being 8
 plot.county(joined_results[[1]],state="PA", top_or_bottom = "top", n = 8, var_name = "Enrollment_Value")
 ```
@@ -423,7 +447,7 @@ Lastly, read in another couple similar data sets and apply your functions! Run y
  – https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv
  – https://www4.stat.ncsu.edu/~online/datasets/PST01d.csv
 
-```{r, eval=TRUE, echo=TRUE}
+```{r, echo=T, output=T}
 result_a <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/PST01a.csv", Enrollment_Value)
 result_b <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/PST01b.csv", Enrollment_Value)
 result_c <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datasets/PST01c.csv", Enrollment_Value)
@@ -431,30 +455,30 @@ result_d <- Split_Data_Along_Geography("https://www4.stat.ncsu.edu/~online/datas
 ``` 
  
 Run your data combining function (probably three times) to put these into one object (with two data frames)
-```{r, eval=TRUE, echo=TRUE}
+```{r, echo=T, output=T}
 Four_Frames_Joined_On_Geo <- combine_results(result_a, result_b, result_c, result_d)
 Four_Frames_Joined_On_Geo
 ```
 
 Use the plot function on the state data frame
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 plot.state(Four_Frames_Joined_On_Geo[[2]])
 ```
 
 Use the plot function on the county data frame
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 #Once specifying the state to be “CA”, the group being the top, the number looked at being 15
 plot.county(Four_Frames_Joined_On_Geo[[1]],state = "CA", top_or_bottom = "top", n = 15, var_name = "Enrollment_Value")
 ```
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 #Once specifying the state to be “TX”, the group being the top, the number looked at being 4
 plot.county(Four_Frames_Joined_On_Geo[[1]],state = "TX", top_or_bottom = "top", n = 4, var_name = "Enrollment_Value")
 ```
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 #Once without specifying anything (defaults used)
 plot.county(Four_Frames_Joined_On_Geo[[1]])
 ```
-```{r, eval=TRUE, echo=TRUE, message=FALSE}
+```{r, eval=T, echo=T, message=F}
 #Once specifying the state to be “NY”, the group being the top, the number looked at being 1
 plot.county(Four_Frames_Joined_On_Geo[[1]],state = "NY", top_or_bottom = "top", n = 1, var_name = "Enrollment_Value")
 ```
